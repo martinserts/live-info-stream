@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horses-grafana
+spec:
+  selector:
+    matchLabels:
+      app: horses-grafana
+  template:
+    metadata:
+      labels:
+        app: horses-grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+        supplementalGroups:
+          - 0
+      containers:
+        - name: grafana
+          image: grafana/grafana:8.4.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /robots.txt
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 2
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 250Mi
+            limits:
+              cpu: 250m
+              memory: 750Mi
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: horses-grafana-pv
+            - mountPath: /etc/grafana/grafana.ini
+              name: horses-grafana-ini-volume
+              subPath: grafana.ini
+      volumes:
+        - name: horses-grafana-pv
+          hostPath:
+            type: DirectoryOrCreate
+            path: /volumes/horses-grafana
+        - name: horses-grafana-ini-volume
+          configMap:
+            defaultMode: 420
+            name: horses-grafana-ini
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: horses-grafana
+spec:
+  selector:
+    app: horses-grafana
+  ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: http-grafana

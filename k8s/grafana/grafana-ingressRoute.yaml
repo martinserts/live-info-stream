@@ -1,0 +1,37 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: horsesgrafanaingressroutehttp
+  namespace: default
+
+spec:
+  entryPoints:
+    - web
+
+  routes:
+  - match: Host(`grafana.fplab.info`)
+    kind: Rule
+    services:
+    - name: horses-grafana
+      port: 3000
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: horsesgrafanaingressroutehttps
+  namespace: default
+
+spec:
+  entryPoints:
+    - websecure
+
+  routes:
+  - match: Host(`grafana.fplab.info`)
+    kind: Rule
+    services:
+    - name: horses-grafana
+      port: 3000
+        
+  tls:
+    certResolver: myresolver
+

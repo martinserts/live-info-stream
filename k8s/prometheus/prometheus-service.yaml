@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: horses-prometheus
+spec:
+  selector: 
+    app: horses-prometheus
+  ports:
+    - port: 8071
+      targetPort: 9090 

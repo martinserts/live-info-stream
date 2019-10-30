@@ -1,0 +1,48 @@
+# Build
+kind: pipeline
+name: default
+
+steps:
+  - name: publish
+    image: plugins/docker
+    settings:
+      registry:
+        from_secret: local_registry
+      repo:
+        from_secret: local_repo_horses
+      username:
+        from_secret: local_docker_username
+      password:
+        from_secret: local_docker_password
+      tags:
+        - ${DRONE_COMMIT_SHA:0:7}
+        - latest
+    when:
+      branch:
+      - master
+      event:
+      - push
+
+  - name: deploy
+    image: danielgormly/drone-plugin-kube:0.2.0
+    settings:
+      namespace: default
+      template: k8s/horses-deployment.yaml
+      ca:
+        from_secret: kubernetes_ca
+      server:
+        from_secret: kubernetes_server
+      token:
+        from_secret: kubernetes_token
+      tag: ${DRONE_COMMIT_SHA:0:7}
+    when:
+      branch:
+      - master
+      event:
+      - push
+
+trigger:
+  branch:
+  - master
+  event:
+  - push

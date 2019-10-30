@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horses-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: horses-prometheus
+  template:
+    metadata:
+      labels:
+        app: horses-prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+            - "--log.level=debug"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: horses-prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: horses-prometheus-storage-volume
+              mountPath: /prometheus/
+          resources:
+            limits:
+              memory: "350Mi"
+              cpu: "550m"
+            requests:
+              memory: "50Mi"
+              cpu: "50m"
+      volumes:
+        - name: horses-prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: horses-prometheus-server-conf
+  
+        - name: horses-prometheus-storage-volume
+          emptyDir: {}

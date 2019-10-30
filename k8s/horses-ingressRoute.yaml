@@ -1,0 +1,36 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: lametricingressroutehttp
+  namespace: default
+
+spec:
+  entryPoints:
+    - web
+
+  routes:
+  - match: Host(`horse-racing.fplab.info`)
+    kind: Rule
+    services:
+    - name: horses
+      port: 8091
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: lametricingressroutehttps
+  namespace: default
+
+spec:
+  entryPoints:
+    - websecure
+
+  routes:
+  - match: Host(`horse-racing.fplab.info`)
+    kind: Rule
+    services:
+    - name: horses
+      port: 8091
+        
+  tls:
+    certResolver: myresolver

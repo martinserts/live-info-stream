@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horses
+spec:
+  selector:
+    matchLabels:
+      app: horses
+  template:
+    metadata:
+      labels:
+        app: horses
+    spec:
+      imagePullSecrets:
+        - name: localdockersecrets
+      containers:
+      - name: horses
+        image: registry.fprog.club/horses:{{ tag }}
+        env:
+          - name: BETFAIR_APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: horses
+                key: app_key
+          - name: BETFAIR_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: horses
+                key: username
+          - name: BETFAIR_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: horses
+                key: password
+        resources:
+          limits:
+            memory: "750Mi"
+            cpu: "550m"
+          requests:
+            memory: "150Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 8090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: horses
+spec:
+  selector:
+    app: horses
+  ports:
+  - port: 8091
+    targetPort: 8090

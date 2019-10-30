@@ -4,6 +4,15 @@ version := "0.1"
 
 scalaVersion := "2.13.1"
 
+javacOptions += "--add-modules=java.xml.ws.annotation"
+
+assemblyMergeStrategy in assembly := {
+//  case x if x.endsWith("module-info.class") => MergeStrategy.discard
+  case PathList("module-info.class", xs @ _*) => MergeStrategy.discard
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
+
 // Java betfair
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.0"
 libraryDependencies += "com.github.joschi.jackson" % "jackson-datatype-threetenbp" % "2.10.0"

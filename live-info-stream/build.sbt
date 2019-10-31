@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.13.1"
 
-javacOptions += "--add-modules=java.xml.ws.annotation"
+// javacOptions += "--add-modules=java.xml.ws.annotation"
 
 assemblyMergeStrategy in assembly := {
 //  case x if x.endsWith("module-info.class") => MergeStrategy.discard

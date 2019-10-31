@@ -4,6 +4,7 @@ import com.betfair.esa.swagger.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.threetenbp.ThreeTenModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,8 @@ public class RequestResponseProcessor {
         setChangeHandler(null);
 
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
+        // objectMapper.findAndRegisterModules();
+	objectMapper.registerModule(new ThreeTenModule());
         objectMapper.addMixIn(ResponseMessage.class, MixInResponseMessage.class );
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }

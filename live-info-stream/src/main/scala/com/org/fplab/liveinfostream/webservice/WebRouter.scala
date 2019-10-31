@@ -38,7 +38,7 @@ object WebRouter {
     wrappedApp = if (config.useCors) CORS(app) else app
 
     server = BlazeServerBuilder[F]
-      .bindHttp(config.port, "localhost")
+      .bindHttp(config.port, "0.0.0.0")
       .withHttpApp(wrappedApp)
       .serve
       .interruptWhen(interrupter)

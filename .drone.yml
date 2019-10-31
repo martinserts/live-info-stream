@@ -1,0 +1,38 @@
+# Build
+kind: pipeline
+name: default
+
+steps:
+  - name: publish
+    image: plugins/docker
+    settings:
+      registry:
+        from_secret: prod_registry
+      repo:
+        from_secret: prod_repo_horses
+      username:
+        from_secret: prod_docker_username
+      password:
+        from_secret: prod_docker_password
+    when:
+      branch:
+      - master
+      event:
+      - push
+
+  - name: restart
+    image: plugins/webhook
+    settings:
+      urls:
+        from_secret: prod_restart_url
+    when:
+      branch:
+      - master
+      event:
+      - push
+
+trigger:
+  branch:
+  - master
+  event:
+  - push

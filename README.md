@@ -13,4 +13,4 @@ Exploration of [Scala](https://www.scala-lang.org/) language and _functional pro
 GUI made with the incredible [Quasar framework](https://quasar.dev/).
 
 # Live demo
-[https://horses.fplab.info](https://horses.fplab.info)
+[https://horse-racing.fplab.info](https://horse-racing.fplab.info)

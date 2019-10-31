@@ -23,7 +23,7 @@
     >
       <q-list>
         <q-item-label header>Essential Links</q-item-label>
-        <q-item clickable tag="a" target="_blank" href="https://github.quasar.dev">
+        <q-item clickable tag="a" target="_blank" href="https://github.com/martinserts/live-info-stream">
           <q-item-section avatar>
             <q-icon name="code" />
           </q-item-section>
@@ -32,7 +32,7 @@
             <q-item-label caption>github.com/martinserts/live-info-stream</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item clickable tag="a" target="_blank" href="mailto:info@fplab.info">
+        <q-item clickable tag="a" target="_blank" href="mailto:martins.erts@gmail.com">
           <q-item-section avatar>
             <q-icon name="email" />
           </q-item-section>

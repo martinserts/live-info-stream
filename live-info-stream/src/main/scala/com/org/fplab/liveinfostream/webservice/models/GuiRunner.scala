@@ -6,5 +6,6 @@ case class GuiRunner(
                       hc: Double,     // Handicap
                       name: String,   // Runner name
                       price: Double,  // Best price available to bet
-                      status: String  // Runner status
+                      status: String, // Runner status
+                      volume: Double  // Total matched volume
                     )

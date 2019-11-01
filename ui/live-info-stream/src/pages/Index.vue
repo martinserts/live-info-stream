@@ -15,6 +15,7 @@
 
 <script>
 import { mapState } from 'vuex';
+import { QSpinner } from 'quasar';
 import marketComponent from 'src/components/index/Market';
 
 export default {
@@ -37,14 +38,18 @@ export default {
   },
   methods: {
     loadData() {
+      this.$q.loading.show({ spinner: QSpinner });
+
       this.$axios.get('markets/list')
         .then(({ data }) => {
           this.$store.commit('livedata/setMarkets', data);
+          this.$q.loading.hide();
         }).catch((error) => {
           this.$q.notify({
             message: error,
             position: 'top-right',
           });
+          this.$q.loading.hide();
         });
     },
   },

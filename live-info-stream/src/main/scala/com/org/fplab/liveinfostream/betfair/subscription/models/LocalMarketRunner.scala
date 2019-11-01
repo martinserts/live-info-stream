@@ -8,7 +8,8 @@ object LocalMarketRunner {
       marketRunner.getRunnerId.getSelectionId,
       marketRunner.getRunnerId.getHandicap,
       LocalLevelPriceSizeList.fromLevelPriceSizeList(marketRunner.getPrices.getBdatb),
-      LocalLevelPriceSizeList.fromLevelPriceSizeList(marketRunner.getPrices.getBdatl)
+      LocalLevelPriceSizeList.fromLevelPriceSizeList(marketRunner.getPrices.getBdatl),
+      marketRunner.getPrices.getTv
     )
 }
 
@@ -16,5 +17,6 @@ case class LocalMarketRunner(
                             selectionId: Long,
                             hc: Double,
                             bestAvailableToBet: LocalLevelPriceSizeList,
-                            bestAvailableToLay: LocalLevelPriceSizeList
+                            bestAvailableToLay: LocalLevelPriceSizeList,
+                            totalVolume: Double
                             )

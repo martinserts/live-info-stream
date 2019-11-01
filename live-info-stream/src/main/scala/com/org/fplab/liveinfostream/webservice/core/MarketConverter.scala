@@ -38,7 +38,8 @@ object MarketConverter {
       hc = localRunner.hc,
       name = runnerNameResolver(localRunner.selectionId),
       price = localRunner.bestAvailableToBet.items.find(_.level == 1).map(_.price).getOrElse(DefaultPriceIfMissing),
-      status = status
+      status = status,
+      volume = localRunner.totalVolume
     )
   }
 }

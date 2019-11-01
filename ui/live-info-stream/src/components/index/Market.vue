@@ -39,6 +39,9 @@
                     :avatarColor="avatarColor"
                     :avatarBackground="avatarBackground"
                     :progressColor="progressColor"
+                    volumeBackground="grey-7"
+                    volumeColor="black"
+                    :tradedVolume="tradedVolume"
                     :index="index + 1" />
           </q-list>
         </q-card-section>

@@ -34,12 +34,20 @@
     </q-item-section>
     <q-item-section>
       {{ item.name }}
+      <q-linear-progress size="25px"
+                         class="q-mb-xs"
+                         :value="volumePercent"
+                         :color="volumeBackground">
+        <div class="absolute-full flex flex-center">
+          <q-badge color="white" :text-color="volumeColor" :label="volumeLabel" />
+        </div>
+      </q-linear-progress>
       <q-linear-progress :value="progress"
                          :color="progressColor"
                          size="lg">
       </q-linear-progress>
     </q-item-section>
-    <q-item-section side>
+    <q-item-section side :style="{minWidth: '60px'}">
       <q-item-label :class="{priceHighlighted: priceChanged}">{{ formattedPrice }}</q-item-label>
     </q-item-section>
   </q-item>
@@ -56,6 +64,9 @@ export default {
     avatarColor: String,
     avatarBackground: String,
     progressColor: String,
+    volumeBackground: String,
+    volumeColor: String,
+    tradedVolume: Number,
   },
   data() {
     return {
@@ -66,6 +77,18 @@ export default {
   computed: {
     runnerId() {
       return this.item.id;
+    },
+    volume() {
+      return this.item.volume;
+    },
+    volumeLabel() {
+      return `$ ${this.volume.toLocaleString('en-GB',
+        {
+          minimumFractionDigits: 2,
+        })}`;
+    },
+    volumePercent() {
+      return this.volume / this.tradedVolume;
     },
     place() {
       return this.item.place;

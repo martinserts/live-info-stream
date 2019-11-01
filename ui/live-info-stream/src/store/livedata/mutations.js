@@ -110,6 +110,24 @@ export function setRunnerStatus(state, {
   });
 }
 
+export function setRunnerVolume(state, {
+  marketId,
+  runnerId,
+  hc,
+  volume,
+}) {
+  updateMarket(state, marketId, (market) => {
+    const runner = market.runners.find(r => r.id === runnerId && r.hc === hc);
+    if (runner) {
+      runner.volume = volume;
+    }
+  });
+}
+
+export function setOnlineUserCount(state, { userCount }) {
+  state.onlineUserCount = userCount;
+}
+
 export function removeMarket(state, marketId) {
   const index = state.orderedMarkets.findIndex(m => m.id === marketId);
   if (index >= 0) state.orderedMarkets.splice(index, 1);

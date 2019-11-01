@@ -32,6 +32,14 @@ function onRunnerStatusChanged(context, data) {
   context.commit('setRunnerStatus', data);
 }
 
+function onRunnerVolumeChanged(context, data) {
+  context.commit('setRunnerVolume', data);
+}
+
+function onOnlineUserCountChanged(context, data) {
+  context.commit('setOnlineUserCount', data);
+}
+
 function mapCommand(name) {
   switch (name) {
     case 'serverTime': return onServerTime;
@@ -40,6 +48,8 @@ function mapCommand(name) {
     case 'marketStatusChanged': return onMarketStatusChanged;
     case 'runnerPriceChanged': return onRunnerPriceChanged;
     case 'runnerStatusChanged': return onRunnerStatusChanged;
+    case 'runnerVolumeChanged': return onRunnerVolumeChanged;
+    case 'onlineUserCountChanged': return onOnlineUserCountChanged;
     default: return onUnknownCommand;
   }
 }

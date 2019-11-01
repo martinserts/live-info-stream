@@ -62,3 +62,20 @@ case class RunnerStatusChangedCommand(
                                     ) extends ApiCommand {
   def getJson: Json = this.asJson
 }
+
+case class RunnerVolumeChangedCommand(
+                                       marketId: String,
+                                       runnerId: Long,
+                                       hc: Double,
+                                       volume: Double,
+                                       command: String = "runnerVolumeChanged"
+                                     ) extends ApiCommand {
+  def getJson: Json = this.asJson
+}
+
+case class OnlineUserCountChangedCommand(
+                                       userCount: Int,
+                                       command: String = "onlineUserCountChanged"
+                                     ) extends ApiCommand {
+  def getJson: Json = this.asJson
+}

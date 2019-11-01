@@ -30,7 +30,7 @@ object MarketSubscription {
                                                                       ): Stream[F, Unit] = {
     queue.dequeue.evalMap(processMarketChange[F](stateRef, _))
       .unNone // Get rid of empty changes
-      .flatMap(commands => Stream.emits(commands.map(c => Some(c.getJson.noSpaces)))) // List[ApiCommand] -> stream of Option[String]
+      .flatMap(commands => Stream.emits(commands.map(c => Some(c.getJson.noSpaces))))
       .through(topic.publish) // Send changes to topic
       .interruptWhen(interrupter)
   }

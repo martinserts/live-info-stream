@@ -4,6 +4,16 @@
       <q-toolbar>
         <img src="../statics/horse.png" style="height: 40px;" />
         <q-toolbar-title>Horse racing stream</q-toolbar-title>
+        <q-chip square>
+          <transition mode="out-in" enter-active-class="animated rubberBand">
+            <q-avatar size="1.6rem"
+                      :key="onlineUserCount"
+                      color="secondary"
+                      text-color="white">{{ onlineUserCount }}</q-avatar>
+          </transition>
+          Spectators online
+        </q-chip>
+        <q-space />
         <q-btn
           flat
           dense
@@ -51,6 +61,9 @@
 </template>
 
 <script>
+import 'animate.css/animate.min.css';
+import { mapState } from 'vuex';
+
 export default {
   name: 'RootLayout',
 
@@ -58,6 +71,11 @@ export default {
     return {
       leftDrawerOpen: false,
     };
+  },
+  computed: {
+    ...mapState('livedata', {
+      onlineUserCount: state => state.onlineUserCount,
+    }),
   },
 };
 </script>

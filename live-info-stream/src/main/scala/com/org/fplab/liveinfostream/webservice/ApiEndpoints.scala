@@ -2,11 +2,12 @@ package com.org.fplab.liveinfostream.webservice
 
 import java.time.Instant
 
+import cats._
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent._
 import com.org.fplab.liveinfostream.state.ApplicationState
-import com.org.fplab.liveinfostream.webservice.controllers.MarketListController
+import com.org.fplab.liveinfostream.webservice.controllers.{MarketListController, OnlineUserCountController}
 import com.org.fplab.liveinfostream.webservice.models.ServerTimeCommand
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -34,16 +35,22 @@ class ApiEndpoints[F[_]: Sync : Concurrent](stateRef: Ref[F, ApplicationState], 
         // Ignore input form client
         val fromClient: Pipe[F, WebSocketFrame, Unit] = _.void
 
+        // Notify clients that a new user has connected
+        val onlineUsers = new OnlineUserCountController(stateRef, topic)
+        val addUser = Stream.eval(
+          onlineUsers.addUser.map(_.getJson.noSpaces)
+        )
+
         // Send current server time to synchronize the client
-        val initialCommand = Stream.eval(
+        val sendServerTime = Stream.eval(
           Sync[F].delay(Instant.now()).map(ServerTimeCommand(_).getJson.noSpaces)
         )
         val topicStream = topic.subscribe(1000).unNone
 
         val toClient: Stream[F, WebSocketFrame.Text] =
-          (initialCommand ++ topicStream).map(cmd => WebSocketFrame.Text(cmd))
+          (sendServerTime ++ addUser ++ topicStream).map(WebSocketFrame.Text(_))
 
-        WebSocketBuilder[F].build(toClient, fromClient)
+        WebSocketBuilder[F].build(toClient, fromClient, onClose = onlineUsers.removeUser.void)
       }
     }
 }

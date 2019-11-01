@@ -53,11 +53,14 @@ module.exports = function (ctx) {
         'QSeparator',
         'QPageScroller',
         'QChip',
+        'QSpinner',
       ],
       directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: [
+        'Loading',
+      ],
     },
 
     // https://quasar.dev/quasar-cli/cli-documentation/supporting-ie

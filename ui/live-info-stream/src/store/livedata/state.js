@@ -5,4 +5,5 @@ export default {
   syncedNow: Date.now(), // Updated via timer
   markets: {},
   orderedMarkets: [],
+  onlineUserCount: 0,
 };

@@ -39,12 +39,7 @@ libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0"
 libraryDependencies += "org.typelevel" %% "cats-effect" % "2.0.0"
 libraryDependencies += "org.typelevel" %% "cats-mtl-core" % "0.7.0"
 
-val cirisVersion = "0.13.0-RC1"
-libraryDependencies ++= Seq(
-  "is.cir" %% "ciris-core",
-  "is.cir" %% "ciris-cats",
-  "is.cir" %% "ciris-cats-effect",
-).map(_ % cirisVersion)
+libraryDependencies += "is.cir" %% "ciris" % "1.0.0"
 
 val http4sVersion = "0.21.0-M5"
 libraryDependencies ++= Seq(

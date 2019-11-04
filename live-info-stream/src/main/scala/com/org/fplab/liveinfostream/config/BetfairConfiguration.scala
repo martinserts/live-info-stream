@@ -1,10 +1,8 @@
 package com.org.fplab.liveinfostream.config
 
-import cats._
-import cats.data._
-import cats.effect._
-import ciris.{Secret, envF, loadConfig}
-import ciris.cats.effect._
+import cats.effect.Blocker
+import cats.implicits._
+import ciris._
 
 /** Betfair configuration */
 final case class BetfairConfiguration(appKey: Secret[String],
@@ -16,15 +14,11 @@ final case class BetfairConfiguration(appKey: Secret[String],
                                      )
 
 object BetfairConfiguration {
-  def getConfiguration[F[_]: Sync](implicit M: MonadError[F, Throwable]): F[BetfairConfiguration] = {
-    val config = loadConfig(
-      envF[F, Secret[String]]("BETFAIR_APP_KEY"),
-      envF[F, Secret[String]]("BETFAIR_USERNAME"),
-      envF[F, Secret[String]]("BETFAIR_PASSWORD")
-    ) { (appKey, username, password) => BetfairConfiguration(appKey, username, password) }
-
-    EitherT(config.result)
-      .leftMap((err) => new Exception(err.message))
-      .rethrowT
+  def getConfiguration[F[_]](implicit blocker: Blocker): ConfigValue[BetfairConfiguration] = {
+    (
+      SecretFileConfigEntry.envSecretFile("BETFAIR_APP_KEY_FILE").or(env("BETFAIR_APP_KEY").as[String]).secret,
+      SecretFileConfigEntry.envSecretFile("BETFAIR_USERNAME_FILE").or(env("BETFAIR_USERNAME").as[String]).secret,
+      SecretFileConfigEntry.envSecretFile("BETFAIR_PASSWORD_FILE").or(env("BETFAIR_PASSWORD").as[String]).secret
+      ).parMapN(BetfairConfiguration(_, _, _))
   }
 }

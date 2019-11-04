@@ -1,9 +1,7 @@
 package com.org.fplab.liveinfostream.config
 
-import cats._
-import cats.effect._
+import cats.implicits._
 import ciris._
-import ciris.cats.effect._
 
 /** Web service configuration */
 final case class WebServiceConfiguration(
@@ -13,14 +11,12 @@ final case class WebServiceConfiguration(
                                         )
 
 object WebServiceConfiguration {
-  def getConfiguration[F[_]: Sync](implicit M: MonadError[F, Throwable]): F[WebServiceConfiguration] = {
-    val config = loadConfig(
-      envF[F, Boolean]("WEBSERVICE_USE_CORS").orValue(false),
-      envF[F, Int]("WEBSERVICE_PORT"),
-      envF[F, String]("WEBSERVICE_ROOT")
-    ) { WebServiceConfiguration(_, _, _) }
-
-    config.orRaiseThrowable
+  def getConfiguration[F[_]]: ConfigValue[WebServiceConfiguration] = {
+    (
+      env("WEBSERVICE_USE_CORS").as[Boolean].or(ConfigValue.default(false)),
+      env("WEBSERVICE_PORT").as[Int],
+      env("WEBSERVICE_ROOT").as[String]
+    ).parMapN(WebServiceConfiguration(_, _, _))
   }
 }
 

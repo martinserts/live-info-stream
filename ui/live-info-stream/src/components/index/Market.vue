@@ -73,7 +73,7 @@
                  </q-td>
                </template>
       </q-table>
-      <div v-if="isMarketClosed" class="headerClass">
+      <div v-if="isMarketClosed" :class="headerClass">
         <q-btn flat icon="delete_forever" @click="removeMarket">Remove market</q-btn>
       </div>
     </q-expansion-item>

@@ -29,11 +29,17 @@
       <q-table dense
                :card-class="headerClass"
                separator="horizontal"
-               :title="title"
                :data="item.runners"
                :columns="columns"
                :pagination.sync="pagination"
                :row-key="row => row.id">
+               <template v-slot:top="props">
+                 <div class="col-2 q-table__title">{{ title }}</div>
+                 <q-space />
+                 <div v-if="isMarketClosed">
+                   <q-btn flat icon="delete_forever" @click="removeMarket">Remove market</q-btn>
+                 </div>
+               </template>
                <template v-slot:body-cell-name="props">
                  <q-td :props="props">
                    <span :class="selectionNameClass(props.row.status)">
@@ -53,7 +59,7 @@
                    <visualProgress
                      v-if="!isStatusRemoved(props.row.status)"
                      :value="props.value / tradedVolume"
-                     :label="`$ ${props.value.toLocaleString('en-GB', {minimumFractionDigits: 2})}`"
+                     :label="formatCcy(props.value)"
                      background="grey-7"
                      labelBackground="black"
                      labelColor="grey-3" />
@@ -64,7 +70,7 @@
                    <visualProgress
                      v-if="!isStatusRemoved(props.row.status)"
                      :value="priceProgress(props.value)"
-                     :label="props.value.toLocaleString('en-GB', {minimumFractionDigits: 2})"
+                     :label="formatDecimal(props.value)"
                      :background="priceColor"
                      labelBackground="white"
                      highlightChanges
@@ -73,9 +79,6 @@
                  </q-td>
                </template>
       </q-table>
-      <div v-if="isMarketClosed" :class="headerClass">
-        <q-btn flat icon="delete_forever" @click="removeMarket">Remove market</q-btn>
-      </div>
     </q-expansion-item>
     <q-separator />
   </div>
@@ -87,6 +90,7 @@ import { canonical } from 'javascript-time-ago/gradation';
 import en from 'javascript-time-ago/locale/en';
 import visualProgressComponent from 'src/components/index/VisualProgress';
 import { isStatusRemoved } from 'src/helpers/status';
+import { formatDecimal, formatCcy } from 'src/helpers/currency';
 
 TimeAgo.addLocale(en);
 
@@ -201,10 +205,7 @@ export default {
       return this.item.tradedVolume;
     },
     formattedTradedVolume() {
-      return `$ ${this.tradedVolume.toLocaleString('en-GB',
-        {
-          minimumFractionDigits: 2,
-        })}`;
+      return formatCcy(this.tradedVolume);
     },
     ago() {
       return new TimeAgo();
@@ -259,6 +260,12 @@ export default {
     },
     isStatusRemoved(status) {
       return isStatusRemoved(status);
+    },
+    formatCcy(amount) {
+      return formatCcy(amount);
+    },
+    formatDecimal(decimal) {
+      return formatDecimal(decimal);
     },
     selectionNameClass(status) {
       return {

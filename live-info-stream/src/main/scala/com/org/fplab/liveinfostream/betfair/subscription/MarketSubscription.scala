@@ -103,11 +103,13 @@ object MarketSubscription {
                                                          command: ApiCommand): F[Option[ApiCommand]] = for {
     rateLimiter <- getOrCreateRateLimiter(registryRef, command)
 
-    result <- rateLimiter.traverse(
-      _.limiter.submit(Sync[F].unit)        // Submit to rate limiter with dummy operation
-        .map(_ => Option(command))          // If successful, return ApiCommand
-        .handleError(_ => None))            // If not successful - return None
-  } yield result.flatten
+    result <- rateLimiter match {
+      case Some(rl) => rl.limiter.submit(Sync[F].unit)        // Submit to rate limiter with dummy operation
+        .map(_ => Option(command))                            // If successful, return ApiCommand
+        .handleError(_ => None)                               // If not successful - return None
+      case None => Sync[F].pure(Option(command))              // If there is no rate limiter, we send command unconditionally
+    }
+  } yield result
 
   private def getOrCreateRateLimiter[F[_] : Sync : Concurrent : Timer](registryRef: Ref[F, RateLimiterRegistry[F]],
                                                                command: ApiCommand): F[Option[RateLimiter[F]]] =

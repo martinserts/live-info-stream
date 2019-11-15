@@ -74,30 +74,36 @@ object MarketSubscription {
 
   /** We should delete closed markets from our state */
   private def isAnyMarketObsolete(commands: Option[List[ApiCommand]]): Boolean =
-    commands.exists(_.exists(isMarketObsolete))
+    commands.exists(_.exists(isMarketObsolete(_).isDefined))
 
-  private def isMarketObsolete(command: ApiCommand): Boolean = command match {
-    case MarketStatusChangedCommand(_, status, _) => status == "CLOSED"
-    case _ => false
+  /** Returns marketId if obsolete */
+  private def isMarketObsolete(command: ApiCommand): Option[String] = command match {
+    case MarketStatusChangedCommand(marketId, "CLOSED", _) => Option(marketId)
+    case _ => None
   }
 
-  private def processCommand[F[_] : Sync : Concurrent : Timer](registryRef: Ref[F, RateLimiterRegistry[F]])
-                                                              (command: ApiCommand): F[Option[ApiCommand]] = for {
-    obsolete <- removeIfObsolete(registryRef, command)
-
-    result <- if (obsolete) { // If obsolete - command must be sent to clients, but not to rate Limiter
-      Sync[F].pure(Option(command))
-    } else limitRate(registryRef, command)
-  } yield result
-
-  private def removeIfObsolete[F[_] : Sync](registryRef: Ref[F, RateLimiterRegistry[F]],
-                                            command: ApiCommand): F[Boolean] =
-    if (isMarketObsolete(command)) {            // If market obsolete - remove it from registry
-      command.getRateLimiter.traverse(limitDefinition =>
-        registryRef.modify(registry => (registry.removed(limitDefinition.key), ()))
-      ) *> Sync[F].pure(true)
+  private def removeRateLimiters[F[_] : Sync](registryRef: Ref[F, RateLimiterRegistry[F]], marketId: String): F[Unit] = for {
+    registry <- registryRef.get
+    toBeRemoved = registry.toList.filter {
+      case (_, RateLimiter(_, Some(id), _)) => id == marketId
     }
-    else { Sync[F].pure(false) }
+
+    _ <- toBeRemoved.map(_._2).traverse(_.stop)     // Stop corresponding rate limiters
+
+    updatedRegistry =  toBeRemoved.foldl(registry) {
+      case (m: RateLimiterRegistry[F], (key, _)) => m.removed(key)
+    }
+    _ <- registryRef.set(updatedRegistry)           // Remove rate limiters from registry
+  } yield ()
+
+  private def processCommand[F[_] : Sync : Concurrent : Timer](registryRef: Ref[F, RateLimiterRegistry[F]])
+                                                              (command: ApiCommand): F[Option[ApiCommand]] =
+    isMarketObsolete(command) match {
+      case Some(marketId) => for {
+        _ <- removeRateLimiters(registryRef, marketId)
+      } yield(Option(command))
+      case None => limitRate(registryRef, command)
+    }
 
   private def limitRate[F[_] : Sync : Concurrent : Timer](registryRef: Ref[F, RateLimiterRegistry[F]],
                                                          command: ApiCommand): F[Option[ApiCommand]] = for {
@@ -118,7 +124,9 @@ object MarketSubscription {
 
       rateLimiter <- registry.get(limitDefinition.key) match {
         case Some(rateLimiter) => Sync[F].pure(rateLimiter)               // Rate limited already exists in registry - return it
-        case None => RateLimiter.launch(limitDefinition, registryRef)     // Rate limiter not found - launch new one
+        case None => RateLimiter.launch(limitDefinition,                  // Rate limiter not found - launch new one
+          command.getAssociatedMarketId,
+          registryRef)
       }
     } yield rateLimiter)
 }

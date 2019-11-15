@@ -9,13 +9,19 @@ import upperbound.Limiter
 
 case class RateLimiter[F[_]](
                               limiter: Limiter[F],
+                              marketId: Option[String],
                               interrupter: SignallingRef[F, Boolean]
-                            )
+                            ) {
+  def stop[F[_]] = interrupter.set(true)
+}
 
 object RateLimiter {
   type RateLimiterRegistry[F[_]] = Map[String, RateLimiter[F]]
 
-  def launch[F[_] : Concurrent : Timer](rate: ApiCommandLimitRate, registryRef: Ref[F, RateLimiterRegistry[F]], maxQueuedItems: Int = 1)
+  def launch[F[_] : Concurrent : Timer](rate: ApiCommandLimitRate,
+                                        marketId: Option[String],
+                                        registryRef: Ref[F, RateLimiterRegistry[F]],
+                                        maxQueuedItems: Int = 1)
     (implicit F: Bracket[F, Throwable]): F[RateLimiter[F]] = for {
     // Signals that limiters needs to be stopped
     interrupter <- SignallingRef[F, Boolean](false)
@@ -23,7 +29,7 @@ object RateLimiter {
     registryModified <- MVar[F].empty[RateLimiter[F]]
 
    _ <- Concurrent[F].start(Limiter.start(rate.rate, maxQueuedItems).use(limiter => {
-     var rl = RateLimiter(limiter, interrupter)
+     var rl = RateLimiter(limiter, marketId, interrupter)
      // Add RateLimiter to registry
      registryRef.modify(registry => (registry.updated(rate.key, rl), ())) *>
      registryModified.put(rl) *>

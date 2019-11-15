@@ -48,7 +48,8 @@ object Server extends IOApp {
                                                                                subscription: NativeBetfairSubscription,
                                                                                marketChangeQueue: Queue[F, LocalMarket])
                                                                              (implicit C: ConfigurationAsk[F]): F[Unit] = for {
-    applicationState <- Ref.of[F, ApplicationState](ApplicationState.empty)
+    emptyState <- ApplicationState.empty
+    applicationState <- Ref.of[F, ApplicationState[F]](emptyState)
     // Topic with JSON messages to be sent to client
     topic <- Topic[F, Option[String]](None)
 

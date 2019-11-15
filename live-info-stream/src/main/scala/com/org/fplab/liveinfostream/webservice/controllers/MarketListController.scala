@@ -10,7 +10,7 @@ import com.org.fplab.liveinfostream.webservice.models.GuiMarket
 /** Market list API */
 object MarketListController {
   /** Market list fetched initially by client. All subsequent updates are via web socket messages */
-  def getMarketList(state: ApplicationState): List[GuiMarket] = {
+  def getMarketList[F[_]](state: ApplicationState[F]): List[GuiMarket] = {
     val navState = state.navigation
     val marketNameResolver = getMarketName(navState)(_)
     val eventNameResolver = getEventName(navState)(_)

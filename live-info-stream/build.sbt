@@ -61,3 +61,5 @@ libraryDependencies ++= Seq(
   "com.github.julien-truffaut" %%  "monocle-core"  % monocleVersion,
   "com.github.julien-truffaut" %%  "monocle-macro" % monocleVersion
 )
+
+libraryDependencies += "org.systemfw" %% "upperbound" % "0.3.0"

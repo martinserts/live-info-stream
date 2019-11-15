@@ -9,6 +9,7 @@ Exploration of [Scala](https://www.scala-lang.org/) language and _functional pro
 * [fs2](https://fs2.io/)
 * [Monocle](https://julien-truffaut.github.io/Monocle/)
 * [Ciris](https://cir.is/)
+* [Upperbound](https://github.com/SystemFw/upperbound) - Purely functional rate limiter
 
 GUI made with the incredible [Quasar framework](https://quasar.dev/).
 

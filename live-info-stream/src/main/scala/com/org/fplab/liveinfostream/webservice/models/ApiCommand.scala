@@ -60,7 +60,7 @@ case class RunnerPriceChangedCommand(
                                       command: String = "runnerPriceChanged"
                                     ) extends ApiCommand {
   def getJson: Json = this.asJson
-  def getRateLimiter = Some(ApiCommandLimitRate(s"RPC-$marketId-$runnerId", Rate(2, FiniteDuration(1, TimeUnit.SECONDS))))
+  def getRateLimiter = Some(ApiCommandLimitRate(s"RPC-$marketId-$runnerId", Rate(1, FiniteDuration(500, TimeUnit.MILLISECONDS))))
 }
 
 case class RunnerStatusChangedCommand(
@@ -82,7 +82,7 @@ case class RunnerVolumeChangedCommand(
                                        command: String = "runnerVolumeChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
-  def getRateLimiter = Some(ApiCommandLimitRate(s"RVC-$marketId-$runnerId", Rate(1, FiniteDuration(10, TimeUnit.SECONDS))))
+  def getRateLimiter = Some(ApiCommandLimitRate(s"RVC-$marketId-$runnerId", Rate(1, FiniteDuration(3, TimeUnit.SECONDS))))
 }
 
 case class OnlineUserCountChangedCommand(

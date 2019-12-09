@@ -53,14 +53,14 @@ object Server extends IOApp {
     // Topic with JSON messages to be sent to client
     topic <- Topic[F, Option[String]](None)
 
-    sessionId = subscription.getSessionId
+    sessionIdReader = Sync[F].delay(subscription.getSessionId)
     // Web server API (including web sockets)
     webServerStream <- WebRouter.createWebServerQueue(interrupter, applicationState, topic)
     _ <- Stream(
       // Betfair navigation info (refreshed every hour)
-      NavigationStream.createNavigationAutoUpdateStream(interrupter, applicationState, sessionId),
+      NavigationStream.createNavigationAutoUpdateStream(interrupter, applicationState, sessionIdReader),
       // Betfair runner info (refreshed every hour)
-      BettingClient.createBettingAutoUpdateStream(interrupter, applicationState, sessionId),
+      BettingClient.createBettingAutoUpdateStream(interrupter, applicationState, sessionIdReader),
       // Reads market queue, identifies changed state and puts it into topic
       MarketSubscription.createMarketChangeQueueProcessorStream(interrupter, applicationState, marketChangeQueue, topic),
       webServerStream

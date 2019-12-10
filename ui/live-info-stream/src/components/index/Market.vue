@@ -236,6 +236,9 @@ export default {
       else if (status === 'CLOSED') this.isOpen = false;
     },
   },
+  mounted() {
+    this.isOpen = this.adjustedStatus === 'INPLAY';
+  },
   methods: {
     removeMarket() {
       this.$store.commit('livedata/removeMarket', this.item.id);

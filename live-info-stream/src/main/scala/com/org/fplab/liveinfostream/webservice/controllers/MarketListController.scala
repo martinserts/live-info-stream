@@ -1,5 +1,11 @@
 package com.org.fplab.liveinfostream.webservice.controllers
 
+import java.time.Instant
+
+import cats._
+import cats.implicits._
+import cats.effect.Clock
+
 import com.org.fplab.liveinfostream.betfair.betting.state.BettingState
 import com.org.fplab.liveinfostream.betfair.navigation.state.NavigationState
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
@@ -7,25 +13,35 @@ import com.org.fplab.liveinfostream.state.ApplicationState
 import com.org.fplab.liveinfostream.webservice.core.MarketConverter
 import com.org.fplab.liveinfostream.webservice.models.GuiMarket
 
+import scala.concurrent.duration.{MILLISECONDS, HOURS}
+
 /** Market list API */
 object MarketListController {
   /** Market list fetched initially by client. All subsequent updates are via web socket messages */
-  def getMarketList(state: ApplicationState): List[GuiMarket] = {
-    val navState = state.navigation
-    val marketNameResolver = getMarketName(navState)(_)
-    val eventNameResolver = getEventName(navState)(_)
-    val runnerNameResolver = getRunnerName(state.betting)(_)
+  def getMarketList[F[_] : Functor](state: ApplicationState[F])
+                         (clock: Clock[F]): F[List[GuiMarket]] = for {
+    realTime <- clock.realTime(MILLISECONDS)
+    staleInstant = Instant.ofEpochMilli(realTime).minusSeconds(60 * 60)
 
-    state.marketSubscription.markets.values
-      .filter(isMarketVisible)
+    navState = state.navigation
+    marketNameResolver = getMarketName(navState)(_)
+    eventNameResolver = getEventName(navState)(_)
+    runnerNameResolver = getRunnerName(state.betting)(_)
+
+    result = state.marketSubscription.markets.values
+      .filter(m => isMarketVisible(m) && !isMarketStale(staleInstant)(m))
       .map(MarketConverter.toGuiMarket(marketNameResolver, eventNameResolver, runnerNameResolver))
       .toList
-  }
+  } yield result
 
   /** True, if market should be shown */
   private def isMarketVisible(market: LocalMarket): Boolean = {
     val md = market.marketDefinition
     md.turnInPlayEnabled && md.bettingType == "ODDS" && md.marketType == "WIN" && md.status != "CLOSED"
+  }
+
+  private def isMarketStale(staleInstant: Instant)(market: LocalMarket): Boolean = {
+    market.marketDefinition.marketTime.compareTo(staleInstant) < 0
   }
 
   /** Fetches market name from navigation data */

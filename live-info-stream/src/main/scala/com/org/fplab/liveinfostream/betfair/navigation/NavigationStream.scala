@@ -17,8 +17,9 @@ import scala.concurrent.duration._
 object NavigationStream {
   /** Fetches Betfair navigation data hourly and saves into application state */
   def createNavigationAutoUpdateStream[F[_]: Sync : ConcurrentEffect : Timer : ConfigurationAsk]
-  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState], sessionId: String): Stream[F, Unit] =  {
+  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState[F]], sessionIdReader: => F[String]): Stream[F, Unit] =  {
     val navigationUpdateStream = Stream.eval(for {
+      sessionId <- sessionIdReader
       data <- NavigationRoot.fromUri(sessionId)
       _ <- saveNavigationData(data, stateRef)
     } yield ())
@@ -27,11 +28,11 @@ object NavigationStream {
       .interruptWhen(interrupter)
   }
 
-  private def saveNavigationData[F[_]](data: NavigationRoot, stateRef: Ref[F, ApplicationState]): F[Unit] =
+  private def saveNavigationData[F[_]](data: NavigationRoot, stateRef: Ref[F, ApplicationState[F]]): F[Unit] =
     stateRef.modifyState(updateNavigationState(data))
 
-  private def updateNavigationState(data: NavigationRoot): State[ApplicationState, Unit] = {
-    val navigationRootLens = ApplicationState.navigation composeOptional NavigationState.root
+  private def updateNavigationState[F[_]](data: NavigationRoot): State[ApplicationState[F], Unit] = {
+    val navigationRootLens = ApplicationState.navigation[F] composeOptional NavigationState.root
     State.modify(navigationRootLens.set(data)(_))
   }
 }

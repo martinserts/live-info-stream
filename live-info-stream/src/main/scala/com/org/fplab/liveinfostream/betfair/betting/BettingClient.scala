@@ -60,11 +60,12 @@ object BettingClient {
 
   /** Creates a stream, that hourly reads runner info and saves it into application state */
   def createBettingAutoUpdateStream[F[_]: Sync : ConcurrentEffect : Timer : ConfigurationAsk]
-  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState], sessionId: String): Stream[F, Unit] =  {
+  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState[F]], sessionIdReader: => F[String]): Stream[F, Unit] =  {
     val bettingUpdateStream = Stream.eval(for {
+      sessionId <- sessionIdReader
       runners <- new BettingClient(sessionId).fetchRunners
       _ <- stateRef.update(s => {
-        var runnersLens = ApplicationState.betting composeLens BettingState.runners
+        var runnersLens = ApplicationState.betting[F] composeLens BettingState.runners
         runnersLens.set(runners)(s)
       })
     } yield ())

@@ -1,15 +1,21 @@
 package com.org.fplab.liveinfostream.webservice.models
 
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
+import upperbound.Rate
+
+import scala.concurrent.duration.FiniteDuration
 
 /** Command to be sent to clients via web socket message */
 sealed trait ApiCommand {
   val command: String
   def getJson: Json
+  def getAssociatedMarketId: Option[String]
+  def getRateLimiter: Option[ApiCommandLimitRate]   // None - comment does not support rate limiting
 }
 
 case class ServerTimeCommand(
@@ -17,6 +23,8 @@ case class ServerTimeCommand(
                               command: String = "serverTime"
                             ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = None
+  def getRateLimiter = None
 }
 
 case class TradedVolumeChangedCommand(
@@ -25,6 +33,8 @@ case class TradedVolumeChangedCommand(
                                        command: String = "tradedVolumeChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = Some(ApiCommandLimitRate(s"TVC-$marketId", Rate(1, FiniteDuration(1, TimeUnit.SECONDS))))
 }
 
 case class MarketInPlayChangedCommand(
@@ -33,6 +43,8 @@ case class MarketInPlayChangedCommand(
                                        command: String = "inPlayChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = None
 }
 
 case class MarketStatusChangedCommand(
@@ -41,6 +53,8 @@ case class MarketStatusChangedCommand(
                                        command: String = "marketStatusChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = None
 }
 
 case class RunnerPriceChangedCommand(
@@ -51,6 +65,8 @@ case class RunnerPriceChangedCommand(
                                       command: String = "runnerPriceChanged"
                                     ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = Some(ApiCommandLimitRate(s"RPC-$marketId-$runnerId", Rate(1, FiniteDuration(500, TimeUnit.MILLISECONDS))))
 }
 
 case class RunnerStatusChangedCommand(
@@ -61,6 +77,8 @@ case class RunnerStatusChangedCommand(
                                       command: String = "runnerStatusChanged"
                                     ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = None
 }
 
 case class RunnerVolumeChangedCommand(
@@ -71,6 +89,8 @@ case class RunnerVolumeChangedCommand(
                                        command: String = "runnerVolumeChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = Option(marketId)
+  def getRateLimiter = Some(ApiCommandLimitRate(s"RVC-$marketId-$runnerId", Rate(1, FiniteDuration(3, TimeUnit.SECONDS))))
 }
 
 case class OnlineUserCountChangedCommand(
@@ -78,4 +98,6 @@ case class OnlineUserCountChangedCommand(
                                        command: String = "onlineUserCountChanged"
                                      ) extends ApiCommand {
   def getJson: Json = this.asJson
+  def getAssociatedMarketId = None
+  def getRateLimiter = None
 }

@@ -54,6 +54,10 @@ module.exports = function (ctx) {
         'QPageScroller',
         'QChip',
         'QSpinner',
+        'QTable',
+        'QTh',
+        'QTr',
+        'QTd',
       ],
       directives: [],
 

@@ -32,14 +32,13 @@ class NativeBetfairSubscription(onMarketChange: (MarketSnap) => Unit) extends Ma
   val HorseRacing = "7"
 
   private var sessionProvider: AppKeyAndSessionProvider = _
-  private var appKeyAndSession: AppKeyAndSession = _
   private var client: Client = _
   private var clientCache: ClientCache = _
 
   override def marketChange(marketChangeEvent: MarketChangeEvent): Unit =
     onMarketChange(marketChangeEvent.getSnap)
 
-  def getSessionId: String = appKeyAndSession.getSession
+  def getSessionId: String = sessionProvider.getOrCreateNewSession().getSession
 
   /** Starts connection
    *
@@ -49,7 +48,6 @@ class NativeBetfairSubscription(onMarketChange: (MarketSnap) => Unit) extends Ma
    */
   private def start(appKey: String, username: String, password: String): Unit = {
     sessionProvider = new AppKeyAndSessionProvider(AppKeyAndSessionProvider.SSO_HOST_COM, appKey, username, password)
-    appKeyAndSession = sessionProvider.getOrCreateNewSession()
 
     client = new Client(HostName, Port, sessionProvider)
     clientCache = new ClientCache(client)

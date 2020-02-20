@@ -19,14 +19,14 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket._
 
-class ApiEndpoints[F[_]: Sync : Concurrent](stateRef: Ref[F, ApplicationState], topic: Topic[F, Option[String]])
-                                           (implicit timer: Timer[F]) extends Http4sDsl[F] {
+class ApiEndpoints[F[_]: Sync : Concurrent](stateRef: Ref[F, ApplicationState[F]], topic: Topic[F, Option[String]])
+                                           (implicit timer: Timer[F], clock: Clock[F]) extends Http4sDsl[F] {
   def eventsEndpoint: HttpRoutes[F] =
     HttpRoutes.of[F] {
       /** Market list */
       case GET -> Root / "markets" / "list" => for {
         state <- stateRef.get
-        markets = MarketListController.getMarketList(state)
+        markets <- MarketListController.getMarketList(state)(clock)
         resp <- Ok(markets.asJson)
       } yield resp
 

@@ -48,28 +48,6 @@ object MarketChangeExtractor {
     else Chain.empty
   }
 
-//  private def findRunnersPriceChanges(oldMarket: GuiMarket, newMarket: GuiMarket): Chain[ApiCommand] = {
-//    def findPriceChanges(runners: List[GuiRunner])(runner: GuiRunner): Option[GuiRunner] =
-//      runners.find(r => r.id == runner.id && r.hc == runner.hc && r.price != runner.price)
-//
-//    val findDiffs = findPriceChanges(newMarket.runners)(_)
-//    val changes = oldMarket.runners.flatMap(findDiffs)
-//      .map(r => RunnerPriceChangedCommand(newMarket.id, r.id, r.hc, r.price))
-//
-//    if (changes.isEmpty) Chain.empty else Chain.fromSeq(changes)
-//  }
-//
-//  private def findRunnersStatusChanges(oldMarket: GuiMarket, newMarket: GuiMarket): Chain[ApiCommand] = {
-//    def findStatusChanges(runners: List[GuiRunner])(runner: GuiRunner): Option[GuiRunner] =
-//      runners.find(r => r.id == runner.id && r.hc == runner.hc && r.status != runner.status)
-//
-//    val findDiffs = findStatusChanges(newMarket.runners)(_)
-//    val changes = oldMarket.runners.flatMap(findDiffs)
-//      .map(r => RunnerStatusChangedCommand(newMarket.id, r.id, r.hc, r.status))
-//
-//    if (changes.isEmpty) Chain.empty else Chain.fromSeq(changes)
-//  }
-
   private def findCorrespondingRunner(runners: List[GuiRunner])(runner: GuiRunner): Option[GuiRunner] =
     runners.find(r => r.id == runner.id && r.hc == runner.hc)
 

@@ -1,5 +1,7 @@
 package com.org.fplab.liveinfostream.state
 
+import cats.implicits._
+import cats.effect.Sync
 import com.org.fplab.liveinfostream.betfair.betting.state.BettingState
 import com.org.fplab.liveinfostream.betfair.navigation.state.NavigationState
 import com.org.fplab.liveinfostream.betfair.subscription.state.MarketSubscriptionState
@@ -8,26 +10,28 @@ import monocle._
 import monocle.macros.GenLens
 
 /** The root of application state */
-case class ApplicationState(
-                             marketSubscription: MarketSubscriptionState,   // State of live stream data
-                             navigation: NavigationState,                   // State of navigation data (refreshed hourly)
-                             betting: BettingState,                         // State contains runner id/names
-                             webService: WebServiceState                    // State contains online user count
+case class ApplicationState[F[_]](
+                             marketSubscription: MarketSubscriptionState[F],  // State of live stream data
+                             navigation: NavigationState,                     // State of navigation data (refreshed hourly)
+                             betting: BettingState,                           // State contains runner id/names
+                             webService: WebServiceState                      // State contains online user count
                            )
 
 object ApplicationState {
   /** Lens to MarketSubscriptionState */
-  val marketSubscription: Lens[ApplicationState, MarketSubscriptionState] = GenLens[ApplicationState](_.marketSubscription)
+  def marketSubscription[F[_]]: Lens[ApplicationState[F], MarketSubscriptionState[F]] = GenLens[ApplicationState[F]](_.marketSubscription)
   /** Lens to NavigationState */
-  val navigation: Lens[ApplicationState, NavigationState] = GenLens[ApplicationState](_.navigation)
+  def navigation[F[_]]: Lens[ApplicationState[F], NavigationState] = GenLens[ApplicationState[F]](_.navigation)
   /** Lens to BettingState */
-  val betting: Lens[ApplicationState, BettingState] = GenLens[ApplicationState](_.betting)
+  def betting[F[_]]: Lens[ApplicationState[F], BettingState] = GenLens[ApplicationState[F]](_.betting)
   /** Lens to WebServiceState */
-  val webService: Lens[ApplicationState, WebServiceState] = GenLens[ApplicationState](_.webService)
+  def webService[F[_]]: Lens[ApplicationState[F], WebServiceState] = GenLens[ApplicationState[F]](_.webService)
 
   /** Initial state */
-  def empty = new ApplicationState(
-    MarketSubscriptionState.empty,
+  def empty[F[_] : Sync]: F[ApplicationState[F]] = for {
+    marketSubscriptionState <- MarketSubscriptionState.empty[F]
+  } yield ApplicationState(
+    marketSubscriptionState,
     NavigationState.empty,
     BettingState.empty,
     WebServiceState.empty

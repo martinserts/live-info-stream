@@ -21,7 +21,7 @@ object WebRouter {
   /** Creates web server. It will enable CORS in development mode */
   def createWebServerQueue[F[_]: Sync : Timer : ConcurrentEffect : ContextShift](
                                                                    interrupter: SignallingRef[F, Boolean],
-                                                                   stateRef: Ref[F, ApplicationState],
+                                                                   stateRef: Ref[F, ApplicationState[F]],
                                                                    topic: Topic[F, Option[String]]
                                                                  )(implicit C: ConfigurationAsk[F]): F[Stream[F, ExitCode]] =  for {
     config <- C.reader(_.webService)

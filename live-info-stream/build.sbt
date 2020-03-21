@@ -35,9 +35,10 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
 
 libraryDependencies += "org.log4s" %% "log4s" % "1.8.2"
 
-libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0"
-libraryDependencies += "org.typelevel" %% "cats-effect" % "2.0.0"
+libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.1"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "2.1.2"
 libraryDependencies += "org.typelevel" %% "cats-mtl-core" % "0.7.0"
+libraryDependencies += "org.typelevel" %% "cats-effect-laws" % "2.1.2"
 
 libraryDependencies += "is.cir" %% "ciris" % "1.0.0"
 

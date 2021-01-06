@@ -7,7 +7,7 @@ COPY live-info-stream/ .
 RUN sbt assembly
 
 # UI build
-FROM node:8-alpine as ui-build
+FROM node:15-alpine as ui-build
 WORKDIR /ui
 COPY ui/live-info-stream/ .
 

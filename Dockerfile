@@ -11,7 +11,8 @@ FROM node:15-alpine as ui-build
 WORKDIR /ui
 COPY ui/live-info-stream/ .
 
-RUN apk add --no-cache python3 py3-pip \
+RUN apk update && \
+    apk add --no-cache python3 py3-pip \
     npm install && \
     npm install -g @quasar/cli && \
     LIVESTREAM_API_ROOT=https://horse-racing.fplab.info/api/ \

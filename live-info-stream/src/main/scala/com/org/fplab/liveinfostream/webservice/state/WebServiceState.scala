@@ -5,8 +5,8 @@ import monocle.Lens
 import monocle.macros.GenLens
 
 case class WebServiceState(
-                            onlineUserCount: Int
-                          )
+  onlineUserCount: Int
+)
 
 object WebServiceState {
   // Lenses

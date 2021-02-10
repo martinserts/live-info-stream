@@ -17,7 +17,7 @@ class NavigationGroupSpec extends UnitSpec {
 
   "circe" can "decode json" in {
     val result = decode[NavigationGroup](json)
-    result should be (Symbol("right"))
+    result should be(Symbol("right"))
 
 //    assertResult(Right("1.114881860"))(result.map(_.id))
   }

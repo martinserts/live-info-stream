@@ -1,15 +1,22 @@
 package com.org.fplab.liveinfostream.webservice.core
 
-import com.org.fplab.liveinfostream.betfair.subscription.models.{LocalMarket, LocalMarketRunner, LocalRunnerDefinitionList}
+import com.org.fplab.liveinfostream.betfair.subscription.models.{
+  LocalMarket,
+  LocalMarketRunner,
+  LocalRunnerDefinitionList
+}
 import com.org.fplab.liveinfostream.webservice.models.{GuiEvent, GuiMarket, GuiRunner}
 
 object MarketConverter {
+
   /** Converts LocalMarket to GuiMarket and augments with missing data */
   def toGuiMarket(
-                   marketNameResolver: String => String,
-                   eventNameResolver: String => String,
-                   runnerNameResolver: Long => String)
-                 (market: LocalMarket): GuiMarket = {
+    marketNameResolver: String => String,
+    eventNameResolver: String => String,
+    runnerNameResolver: Long => String
+  )(
+    market: LocalMarket
+  ): GuiMarket = {
     val md = market.marketDefinition
     GuiMarket(
       id = market.marketId,
@@ -24,8 +31,12 @@ object MarketConverter {
   }
 
   /** Converts LocalMarketRunner to GuiRunner */
-  private def toGuiRunner(runnerNameResolver: Long => String, runnerDefinitions: LocalRunnerDefinitionList)
-                         (localRunner: LocalMarketRunner): GuiRunner = {
+  private def toGuiRunner(
+    runnerNameResolver: Long => String,
+    runnerDefinitions: LocalRunnerDefinitionList
+  )(
+    localRunner: LocalMarketRunner
+  ): GuiRunner = {
     val DefaultPriceIfMissing: Double = 0
 
     val status = runnerDefinitions.items

@@ -14,9 +14,9 @@ object LocalMarketRunner {
 }
 
 case class LocalMarketRunner(
-                            selectionId: Long,
-                            hc: Double,
-                            bestAvailableToBet: LocalLevelPriceSizeList,
-                            bestAvailableToLay: LocalLevelPriceSizeList,
-                            totalVolume: Double
-                            )
+  selectionId: Long,
+  hc: Double,
+  bestAvailableToBet: LocalLevelPriceSizeList,
+  bestAvailableToLay: LocalLevelPriceSizeList,
+  totalVolume: Double
+)

@@ -3,16 +3,25 @@ package com.org.fplab.liveinfostream.webservice.core
 import cats.implicits._
 import cats.data.Chain
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
-import com.org.fplab.liveinfostream.webservice.models.{ApiCommand, GuiMarket, GuiRunner, MarketInPlayChangedCommand, MarketStatusChangedCommand, RunnerPriceChangedCommand, RunnerStatusChangedCommand, RunnerVolumeChangedCommand, TradedVolumeChangedCommand}
+import com.org.fplab.liveinfostream.webservice.models.{
+  ApiCommand,
+  GuiMarket,
+  GuiRunner,
+  MarketInPlayChangedCommand,
+  MarketStatusChangedCommand,
+  RunnerPriceChangedCommand,
+  RunnerStatusChangedCommand,
+  RunnerVolumeChangedCommand,
+  TradedVolumeChangedCommand
+}
 
 object MarketChangeExtractor {
+
   /** Compares two local markets and returns list of changes in form of ApiCommands */
   def getStateChanges(oldState: LocalMarket, newState: LocalMarket): Option[List[ApiCommand]] = {
     // We done care about market, runner name changes (I guess they never happen)
-    def convertMarket: LocalMarket => GuiMarket = MarketConverter.toGuiMarket(
-      Function.const(""),
-      Function.const(""),
-      Function.const(""))
+    def convertMarket: LocalMarket => GuiMarket =
+      MarketConverter.toGuiMarket(Function.const(""), Function.const(""), Function.const(""))
 
     val oldMarket = convertMarket(oldState)
     val newMarket = convertMarket(newState)
@@ -51,31 +60,29 @@ object MarketChangeExtractor {
   private def findCorrespondingRunner(runners: List[GuiRunner])(runner: GuiRunner): Option[GuiRunner] =
     runners.find(r => r.id == runner.id && r.hc == runner.hc)
 
-  private def getRunnerPriceChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] = {
+  private def getRunnerPriceChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
     if (a.price != b.price) Some(RunnerPriceChangedCommand(market.id, b.id, b.hc, b.price)) else None
-  }
 
-  private def getRunnerStatusChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] = {
+  private def getRunnerStatusChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
     if (a.status != b.status) Some(RunnerStatusChangedCommand(market.id, b.id, b.hc, b.status)) else None
-  }
 
-  private def getRunnerVolumeChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] = {
+  private def getRunnerVolumeChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
     if (a.volume != b.volume) Some(RunnerVolumeChangedCommand(market.id, b.id, b.hc, b.volume)) else None
-  }
 
-  private def extractRunnerChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): List[ApiCommand] = {
+  private def extractRunnerChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): List[ApiCommand] =
     List(
       getRunnerPriceChanges(market)(a, b),
       getRunnerStatusChanges(market)(a, b),
       getRunnerVolumeChanges(market)(a, b)
     ).flatten
-  }
 
   private def findRunnersChanges(oldMarket: GuiMarket, newMarket: GuiMarket): Chain[ApiCommand] = {
     val changes = newMarket.runners
       .flatMap(newRunner =>
-        findCorrespondingRunner(oldMarket.runners)(newRunner).
-          flatMap(oldRunner => Some(extractRunnerChanges(newMarket)(oldRunner, newRunner))))
+        findCorrespondingRunner(oldMarket.runners)(newRunner).flatMap(oldRunner =>
+          Some(extractRunnerChanges(newMarket)(oldRunner, newRunner))
+        )
+      )
       .flatten
     if (changes.isEmpty) Chain.empty else Chain.fromSeq(changes)
   }

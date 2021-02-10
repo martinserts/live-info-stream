@@ -5,8 +5,8 @@ import monocle.macros.GenLens
 
 /** Betting state that contains map of runner id -> runner name */
 case class BettingState(
-                       runners: Map[Long, String]
-                       )
+  runners: Map[Long, String]
+)
 
 object BettingState {
   // Lenses

@@ -12,7 +12,7 @@ object LocalLevelPriceSize {
 }
 
 case class LocalLevelPriceSize(
-                              level: Int,
-                              price: Double,
-                              size: Double
-                              )
+  level: Int,
+  price: Double,
+  size: Double
+)

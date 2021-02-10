@@ -18,29 +18,33 @@ import org.http4s.syntax.kleisli._
 import scala.concurrent.ExecutionContext
 
 object WebRouter {
+
   /** Creates web server. It will enable CORS in development mode */
-  def createWebServerQueue[F[_]: Sync : Timer : ConcurrentEffect : ContextShift](
-                                                                   interrupter: SignallingRef[F, Boolean],
-                                                                   stateRef: Ref[F, ApplicationState[F]],
-                                                                   topic: Topic[F, Option[String]]
-                                                                 )(implicit C: ConfigurationAsk[F]): F[Stream[F, ExitCode]] =  for {
-    config <- C.reader(_.webService)
+  def createWebServerQueue[F[_]: Sync: Timer: ConcurrentEffect: ContextShift](
+    interrupter: SignallingRef[F, Boolean],
+    stateRef: Ref[F, ApplicationState[F]],
+    topic: Topic[F, Option[String]]
+  )(implicit
+    C: ConfigurationAsk[F]
+  ): F[Stream[F, ExitCode]] =
+    for {
+      config <- C.reader(_.webService)
 
-    blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-    blocker = Blocker.liftExecutionContext(blockingEc)
-    staticFiles = fileService(FileService.Config[F](config.staticFilesRoot, blocker))
+      blockingEc  = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+      blocker     = Blocker.liftExecutionContext(blockingEc)
+      staticFiles = fileService(FileService.Config[F](config.staticFilesRoot, blocker))
 
-    router = Router(
-      "/api" -> new ApiEndpoints(stateRef, topic).eventsEndpoint,
-      "" -> staticFiles
-    )
-    app = router.orNotFound
-    wrappedApp = if (config.useCors) CORS(app) else app
+      router     = Router(
+                     "/api" -> new ApiEndpoints(stateRef, topic).eventsEndpoint,
+                     ""     -> staticFiles
+                   )
+      app        = router.orNotFound
+      wrappedApp = if (config.useCors) CORS(app) else app
 
-    server = BlazeServerBuilder[F]
-      .bindHttp(config.port, "0.0.0.0")
-      .withHttpApp(wrappedApp)
-      .serve
-      .interruptWhen(interrupter)
-  } yield server
+      server = BlazeServerBuilder[F]
+                 .bindHttp(config.port, "0.0.0.0")
+                 .withHttpApp(wrappedApp)
+                 .serve
+                 .interruptWhen(interrupter)
+    } yield server
 }

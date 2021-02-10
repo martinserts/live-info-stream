@@ -23,25 +23,24 @@ import io.circe.generic.auto._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class BettingClient[F[_] : ConcurrentEffect](sessionId: String)(implicit C: ConfigurationAsk[F]) {
+class BettingClient[F[_]: ConcurrentEffect](sessionId: String)(implicit C: ConfigurationAsk[F]) {
   val HorseRacing = "7"
 
   /** Fetches map of runner id -> runner name */
-  def fetchRunners: F[Map[Long, String]] = {
+  def fetchRunners: F[Map[Long, String]] =
     BlazeClientBuilder[F](ExecutionContext.global).resource.use { client =>
       for {
-        config <- C.reader(_.betfair)
-        headers = Headers.of(
-          Header("X-Application", config.appKey.value),
-          Header("X-Authentication", sessionId)
-        )
+        config       <- C.reader(_.betfair)
+        headers       = Headers.of(
+                          Header("X-Application", config.appKey.value),
+                          Header("X-Authentication", sessionId)
+                        )
 
-        request = Request[F](Method.POST, Uri.unsafeFromString(config.bettingUri), headers = headers)
-          .withEntity(listMarketCatalogueRequest)
+        request       = Request[F](Method.POST, Uri.unsafeFromString(config.bettingUri), headers = headers)
+                          .withEntity(listMarketCatalogueRequest)
         jsonResponse <- client.fetch(request)(_.body.through(utf8Decode).compile.string)
       } yield Map.from(BettingClient.parseRunners(jsonResponse).map(r => r.selectionId -> r.runnerName))
     }
-  }
 
   /** list market catalogue API request as JSON */
   private def listMarketCatalogueRequest: Json = {
@@ -59,15 +58,18 @@ object BettingClient {
   case class RunnerData(selectionId: Long, runnerName: String)
 
   /** Creates a stream, that hourly reads runner info and saves it into application state */
-  def createBettingAutoUpdateStream[F[_]: Sync : ConcurrentEffect : Timer : ConfigurationAsk]
-  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState[F]], sessionIdReader: => F[String]): Stream[F, Unit] =  {
+  def createBettingAutoUpdateStream[F[_]: Sync: ConcurrentEffect: Timer: ConfigurationAsk](
+    interrupter: SignallingRef[F, Boolean],
+    stateRef: Ref[F, ApplicationState[F]],
+    sessionIdReader: => F[String]
+  ): Stream[F, Unit] = {
     val bettingUpdateStream = Stream.eval(for {
       sessionId <- sessionIdReader
-      runners <- new BettingClient(sessionId).fetchRunners
-      _ <- stateRef.update(s => {
-        var runnersLens = ApplicationState.betting[F] composeLens BettingState.runners
-        runnersLens.set(runners)(s)
-      })
+      runners   <- new BettingClient(sessionId).fetchRunners
+      _         <- stateRef.update { s =>
+                     var runnersLens = ApplicationState.betting[F] composeLens BettingState.runners
+                     runnersLens.set(runners)(s)
+                   }
     } yield ())
 
     (bettingUpdateStream ++ Stream.sleep(1.hour)).repeat

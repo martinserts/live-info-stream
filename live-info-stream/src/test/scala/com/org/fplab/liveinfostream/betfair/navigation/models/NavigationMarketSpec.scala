@@ -34,13 +34,13 @@ class NavigationMarketSpec extends UnitSpec {
 
   "circe" can "decode json" in {
     val result = decode[NavigationMarket](json)
-    result should be (Symbol("right"))
+    result should be(Symbol("right"))
 
     assertResult(Right("1.114881860"))(result.map(_.id))
   }
 
   "circe" should "respect type" in {
     val result = decode[NavigationMarket](jsonWrongType)
-    result should be (Symbol("left"))
+    result should be(Symbol("left"))
   }
 }

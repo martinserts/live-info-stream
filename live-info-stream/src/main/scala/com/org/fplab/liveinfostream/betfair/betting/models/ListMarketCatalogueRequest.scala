@@ -6,10 +6,10 @@ import io.circe.syntax._
 
 /** Betfair betting API request */
 case class ListMarketCatalogueRequest(
-                                       filter: MarketFilter,
-                                       marketProjection: List[String],
-                                       sort: String,
-                                       maxResults: Int
-                                     ) extends HasEncoded {
+  filter: MarketFilter,
+  marketProjection: List[String],
+  sort: String,
+  maxResults: Int
+) extends HasEncoded {
   def encoded: Json = this.asJson
 }

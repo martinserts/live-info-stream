@@ -17,11 +17,11 @@ class ListMarketCatalagueRequestSpec extends UnitSpec {
     val json = rpc.getJson
     assert(json.isObject)
 
-    val idResult  = for {
-      o <- json.asObject
-      idJson <- o("id")
+    val idResult = for {
+      o        <- json.asObject
+      idJson   <- o("id")
       idNumber <- idJson.asNumber
-      id <- idNumber.toInt
+      id       <- idNumber.toInt
     } yield id
     assertResult(Some(1))(idResult)
 
@@ -33,7 +33,7 @@ class ListMarketCatalagueRequestSpec extends UnitSpec {
   }
 
   "circe" can "parse runners" in {
-    val json:String =
+    val json: String =
       """
         |{
         |  "jsonrpc" : "2.0",

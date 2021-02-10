@@ -18,11 +18,11 @@ class NavigationEventTypeChildSpec extends UnitSpec {
 
   "circe" can "decode Event child" in {
     val result = decode[NavigationEventTypeChild](jsonEventChild)
-    result should be (Symbol("right"))
+    result should be(Symbol("right"))
 
     val isCorrectType = result match {
       case Right(NetcGroup(g)) => g.`type` == "EVENT"
-      case _ => false
+      case _                   => false
     }
     assert(isCorrectType)
   }

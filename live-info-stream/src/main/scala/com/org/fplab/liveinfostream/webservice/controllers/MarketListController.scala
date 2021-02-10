@@ -17,22 +17,23 @@ import scala.concurrent.duration.{MILLISECONDS, HOURS}
 
 /** Market list API */
 object MarketListController {
+
   /** Market list fetched initially by client. All subsequent updates are via web socket messages */
-  def getMarketList[F[_] : Functor](state: ApplicationState[F])
-                         (clock: Clock[F]): F[List[GuiMarket]] = for {
-    realTime <- clock.realTime(MILLISECONDS)
-    staleInstant = Instant.ofEpochMilli(realTime).minusSeconds(60 * 60)
+  def getMarketList[F[_]: Functor](state: ApplicationState[F])(clock: Clock[F]): F[List[GuiMarket]] =
+    for {
+      realTime    <- clock.realTime(MILLISECONDS)
+      staleInstant = Instant.ofEpochMilli(realTime).minusSeconds(60 * 60)
 
-    navState = state.navigation
-    marketNameResolver = getMarketName(navState)(_)
-    eventNameResolver = getEventName(navState)(_)
-    runnerNameResolver = getRunnerName(state.betting)(_)
+      navState           = state.navigation
+      marketNameResolver = getMarketName(navState)(_)
+      eventNameResolver  = getEventName(navState)(_)
+      runnerNameResolver = getRunnerName(state.betting)(_)
 
-    result = state.marketSubscription.markets.values
-      .filter(m => isMarketVisible(m) && !isMarketStale(staleInstant)(m))
-      .map(MarketConverter.toGuiMarket(marketNameResolver, eventNameResolver, runnerNameResolver))
-      .toList
-  } yield result
+      result = state.marketSubscription.markets.values
+                 .filter(m => isMarketVisible(m) && !isMarketStale(staleInstant)(m))
+                 .map(MarketConverter.toGuiMarket(marketNameResolver, eventNameResolver, runnerNameResolver))
+                 .toList
+    } yield result
 
   /** True, if market should be shown */
   private def isMarketVisible(market: LocalMarket): Boolean = {
@@ -40,9 +41,8 @@ object MarketListController {
     md.turnInPlayEnabled && md.bettingType == "ODDS" && md.marketType == "WIN" && md.status != "CLOSED"
   }
 
-  private def isMarketStale(staleInstant: Instant)(market: LocalMarket): Boolean = {
+  private def isMarketStale(staleInstant: Instant)(market: LocalMarket): Boolean =
     market.marketDefinition.marketTime.compareTo(staleInstant) < 0
-  }
 
   /** Fetches market name from navigation data */
   private def getMarketName(navState: NavigationState)(marketId: String): String =

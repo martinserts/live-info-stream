@@ -58,7 +58,7 @@ class NavigationRaceSpec extends UnitSpec {
 
   "circe" can "decode json" in {
     val result = decode[NavigationRace](json)
-    result should be (Symbol("right"))
+    result should be(Symbol("right"))
 
     assertResult(Right("27247020.1115"))(result.map(_.id))
     assertResult(Right(true))(result.map(_.children.isDefined))
@@ -68,6 +68,6 @@ class NavigationRaceSpec extends UnitSpec {
 
   "circe" should "respect type" in {
     val result = decode[NavigationRace](jsonWrongType)
-    result should be (Symbol("left"))
+    result should be(Symbol("left"))
   }
 }

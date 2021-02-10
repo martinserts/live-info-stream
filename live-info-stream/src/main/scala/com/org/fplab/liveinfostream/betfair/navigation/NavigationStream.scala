@@ -15,13 +15,17 @@ import fs2.concurrent._
 import scala.concurrent.duration._
 
 object NavigationStream {
+
   /** Fetches Betfair navigation data hourly and saves into application state */
-  def createNavigationAutoUpdateStream[F[_]: Sync : ConcurrentEffect : Timer : ConfigurationAsk]
-  (interrupter: SignallingRef[F, Boolean], stateRef: Ref[F, ApplicationState[F]], sessionIdReader: => F[String]): Stream[F, Unit] =  {
+  def createNavigationAutoUpdateStream[F[_]: Sync: ConcurrentEffect: Timer: ConfigurationAsk](
+    interrupter: SignallingRef[F, Boolean],
+    stateRef: Ref[F, ApplicationState[F]],
+    sessionIdReader: => F[String]
+  ): Stream[F, Unit] = {
     val navigationUpdateStream = Stream.eval(for {
       sessionId <- sessionIdReader
-      data <- NavigationRoot.fromUri(sessionId)
-      _ <- saveNavigationData(data, stateRef)
+      data      <- NavigationRoot.fromUri(sessionId)
+      _         <- saveNavigationData(data, stateRef)
     } yield ())
 
     (navigationUpdateStream ++ Stream.sleep(1.hour)).repeat

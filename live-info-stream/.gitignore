@@ -1,3 +1,6 @@
+#
+.DS_Store
+
 ### SBT ###
 dist/*
 target/

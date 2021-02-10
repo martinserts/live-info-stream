@@ -4,6 +4,12 @@ name := "live-info-stream"
 version := "0.1"
 scalaVersion := "2.13.4"
 
+assemblyMergeStrategy in assembly := {
+  case PathList("module-info.class", _ @ _*) => MergeStrategy.discard
+  case PathList("META-INF", _ @ _*) => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}
+
 libraryDependencies ++= Seq(
   Java.JavaxAnnotation,
   Java.JacksonCore,

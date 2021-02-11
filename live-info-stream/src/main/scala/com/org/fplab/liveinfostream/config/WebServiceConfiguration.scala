@@ -16,5 +16,5 @@ object WebServiceConfiguration {
       env("WEBSERVICE_USE_CORS").as[Boolean].or(ConfigValue.default(false)),
       env("WEBSERVICE_PORT").as[Int],
       env("WEBSERVICE_ROOT").as[String]
-    ).parMapN(WebServiceConfiguration(_, _, _))
+    ).mapN(WebServiceConfiguration.apply)
 }

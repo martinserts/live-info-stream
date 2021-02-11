@@ -20,7 +20,7 @@ object LocalMarketDefinition {
     )
 }
 
-case class LocalMarketDefinition(
+final case class LocalMarketDefinition(
   eventId: String,
   eventTypeId: String,
   marketType: String,

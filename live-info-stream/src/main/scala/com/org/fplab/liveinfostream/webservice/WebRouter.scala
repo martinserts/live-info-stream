@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 object WebRouter {
 
   /** Creates web server. It will enable CORS in development mode */
-  def createWebServerQueue[F[_]: Sync: Timer: ConcurrentEffect: ContextShift](
+  def createWebServerQueue[F[_]: Timer: ConcurrentEffect: ContextShift](
     interrupter: SignallingRef[F, Boolean],
     stateRef: Ref[F, ApplicationState[F]],
     topic: Topic[F, Option[String]]
@@ -41,7 +41,7 @@ object WebRouter {
       app        = router.orNotFound
       wrappedApp = if (config.useCors) CORS(app) else app
 
-      server = BlazeServerBuilder[F]
+      server = BlazeServerBuilder[F](ExecutionContext.global)
                  .bindHttp(config.port, "0.0.0.0")
                  .withHttpApp(wrappedApp)
                  .serve

@@ -11,4 +11,4 @@ object LocalRunnerDefinitionList {
     )
 }
 
-case class LocalRunnerDefinitionList(items: List[LocalRunnerDefinition])
+final case class LocalRunnerDefinitionList(items: List[LocalRunnerDefinition])

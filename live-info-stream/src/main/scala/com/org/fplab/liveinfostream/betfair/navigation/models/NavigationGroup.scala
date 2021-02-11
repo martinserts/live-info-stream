@@ -4,14 +4,14 @@ import com.org.fplab.liveinfostream.betfair.navigation.models.NavigationGroupChi
 import io.circe.Decoder
 
 /** Children of type "NavigationGroup" */
-case class NavigationGroup(
+final case class NavigationGroup(
   id: String,
   name: String,
   children: Option[List[NavigationGroupChild]],
   `type`: String
 ) {
-  def isEvent = `type` == "EVENT"
-  def isGroup = `type` == "GROUP"
+  def isEvent: Boolean = `type` == "EVENT"
+  def isGroup: Boolean = `type` == "GROUP"
 }
 
 object NavigationGroupCodec {

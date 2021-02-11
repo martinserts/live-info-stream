@@ -4,7 +4,7 @@ import com.org.fplab.liveinfostream.betfair.navigation.models.NavigationEventTyp
 import io.circe.Decoder
 
 /** Children of types "NavigationGroup" and "NavigationRace" */
-case class NavigationEventType(
+final case class NavigationEventType(
   id: String,
   name: String,
   children: Option[List[NavigationEventTypeChild]],

@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import io.circe.Decoder
 
-case class NavigationMarket(
+final case class NavigationMarket(
   id: String,
   name: String,
   exchangeId: Option[String],

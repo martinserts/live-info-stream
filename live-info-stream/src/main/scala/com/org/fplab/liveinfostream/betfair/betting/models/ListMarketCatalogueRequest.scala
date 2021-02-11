@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 
 /** Betfair betting API request */
-case class ListMarketCatalogueRequest(
+final case class ListMarketCatalogueRequest(
   filter: MarketFilter,
   marketProjection: List[String],
   sort: String,

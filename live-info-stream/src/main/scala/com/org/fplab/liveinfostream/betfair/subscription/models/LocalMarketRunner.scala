@@ -13,7 +13,7 @@ object LocalMarketRunner {
     )
 }
 
-case class LocalMarketRunner(
+final case class LocalMarketRunner(
   selectionId: Long,
   hc: Double,
   bestAvailableToBet: LocalLevelPriceSizeList,

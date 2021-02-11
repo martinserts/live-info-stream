@@ -3,7 +3,7 @@ package com.org.fplab.liveinfostream.webservice.models
 import java.time.Instant
 
 /** Market details sent to external client */
-case class GuiMarket(
+final case class GuiMarket(
   id: String,               // Market id
   name: String,             // Market name
   inPlay: Boolean,          // Whether market is currently in play (live)

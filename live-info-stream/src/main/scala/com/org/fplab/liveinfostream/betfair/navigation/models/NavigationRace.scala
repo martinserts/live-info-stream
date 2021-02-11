@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 import com.org.fplab.liveinfostream.betfair.navigation.models.NavigationMarketCodec._
 import io.circe.Decoder
 
-case class NavigationRace(
+final case class NavigationRace(
   id: String,
   name: String,
   startTime: Option[ZonedDateTime],

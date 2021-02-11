@@ -6,8 +6,8 @@ import io.circe.{Decoder, HCursor}
 
 sealed trait NavigationGroupChild
 
-case class NgcGroup(data: NavigationGroup)   extends NavigationGroupChild
-case class NgcMarket(data: NavigationMarket) extends NavigationGroupChild
+final case class NgcGroup(data: NavigationGroup)   extends NavigationGroupChild
+final case class NgcMarket(data: NavigationMarket) extends NavigationGroupChild
 
 object NavigationGroupChildCodec {
   implicit lazy val decodeNgcGroup: Decoder[NgcGroup]   = Decoder[NavigationGroup].map(NgcGroup(_))

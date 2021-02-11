@@ -3,7 +3,7 @@ package com.org.fplab.liveinfostream.betfair.betting.models
 import io.circe._
 
 /** All betting API requests are wrapped into JsonRPC */
-case class RpcRequest[A <: HasEncoded](
+final case class RpcRequest[A <: HasEncoded](
   method: String,
   params: A,
   id: Int = 1,
@@ -19,5 +19,5 @@ case class RpcRequest[A <: HasEncoded](
 
 object RpcRequest {
   def apply[A <: HasEncoded](operation: String, request: A): RpcRequest[A] =
-    new RpcRequest(method = s"SportsAPING/v1.0/$operation", request)
+    RpcRequest(method = s"SportsAPING/v1.0/$operation", request)
 }

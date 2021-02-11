@@ -2,17 +2,17 @@ package com.org.fplab.liveinfostream.betfair.subscription.limiter
 
 import cats.effect.concurrent.{MVar, Ref}
 import cats.implicits._
-import cats.effect.{Bracket, Concurrent, Timer}
+import cats.effect.{Concurrent, Timer}
 import com.org.fplab.liveinfostream.webservice.models.ApiCommandLimitRate
 import fs2.concurrent.SignallingRef
 import upperbound.Limiter
 
-case class RateLimiter[F[_]](
+final case class RateLimiter[F[_]](
   limiter: Limiter[F],
   marketId: Option[String],
   interrupter: SignallingRef[F, Boolean]
 ) {
-  def stop[F[_]] = interrupter.set(true)
+  def stop: F[Unit] = interrupter.set(true)
 }
 
 object RateLimiter {
@@ -23,8 +23,6 @@ object RateLimiter {
     marketId: Option[String],
     registryRef: Ref[F, RateLimiterRegistry[F]],
     maxQueuedItems: Int = 1
-  )(implicit
-    F: Bracket[F, Throwable]
   ): F[RateLimiter[F]] =
     for {
       // Signals that limiters needs to be stopped
@@ -33,7 +31,7 @@ object RateLimiter {
       registryModified <- MVar[F].empty[RateLimiter[F]]
 
       _           <- Concurrent[F].start(Limiter.start(rate.rate, maxQueuedItems).use { limiter =>
-                       var rl = RateLimiter(limiter, marketId, interrupter)
+                       val rl = RateLimiter(limiter, marketId, interrupter)
                        // Add RateLimiter to registry
                        registryRef.modify(registry => (registry.updated(rate.key, rl), ())) *>
                          registryModified.put(rl) *>

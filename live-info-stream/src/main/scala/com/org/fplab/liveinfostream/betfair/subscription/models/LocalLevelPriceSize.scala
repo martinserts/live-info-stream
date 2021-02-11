@@ -11,7 +11,7 @@ object LocalLevelPriceSize {
     )
 }
 
-case class LocalLevelPriceSize(
+final case class LocalLevelPriceSize(
   level: Int,
   price: Double,
   size: Double

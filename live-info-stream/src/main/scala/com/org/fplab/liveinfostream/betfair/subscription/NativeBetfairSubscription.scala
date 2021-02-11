@@ -6,7 +6,7 @@ package com.org.fplab.liveinfostream.betfair.subscription
 
 import cats.implicits._
 import cats.effect.{Resource, Sync}
-import com.betfair.esa.client.auth.{AppKeyAndSession, AppKeyAndSessionProvider}
+import com.betfair.esa.client.auth.AppKeyAndSessionProvider
 import com.betfair.esa.client.cache.market.{MarketChangeEvent, MarketChangeListener, MarketSnap}
 import com.betfair.esa.client.{Client, ClientCache}
 import com.betfair.esa.swagger.model.MarketFilter
@@ -29,7 +29,7 @@ object NativeBetfairSubscription {
             s
           }
         )
-    } { s => Sync[F].delay(s.stop) }
+    } { s => Sync[F].delay(s.stop()) }
 }
 
 class NativeBetfairSubscription(onMarketChange: (MarketSnap) => Unit) extends MarketChangeListener {
@@ -70,6 +70,6 @@ class NativeBetfairSubscription(onMarketChange: (MarketSnap) => Unit) extends Ma
   }
 
   /** Stops connection */
-  private def stop: Unit =
-    client.stop
+  private def stop(): Unit =
+    client.stop()
 }

@@ -1,10 +1,10 @@
 # Scala build
-FROM hseeberger/scala-sbt:8u222_1.3.3_2.13.1 as scala-build
+FROM hseeberger/scala-sbt:11.0.10_1.4.7_2.13.4 as scala-build
 WORKDIR /app
 COPY live-info-stream/ .
 
 # Build fat JAR
-RUN sbt assembly
+RUN sbt ";build;assembly"
 
 # UI build
 FROM node:15-alpine as ui-build
@@ -21,7 +21,7 @@ RUN apk add --no-cache --virtual .gyp \
     LIVESTREAM_WS_ROOT=wss://horse-racing.fplab.info/api/ws quasar build
 
 # Runtime
-FROM openjdk:8-jre-alpine
+FROM adoptopenjdk:11-jre-hotspot
 WORKDIR /app
 
 COPY --from=scala-build /app/target/scala-2.13/live-info-stream-assembly-0.1.jar .

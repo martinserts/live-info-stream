@@ -3,6 +3,9 @@ import Dependencies._
 name := "live-info-stream"
 version := "0.1"
 scalaVersion := "2.13.4"
+scapegoatVersion in ThisBuild := "1.4.7"
+
+scalacOptions ++= Seq("-Wunused")
 
 assemblyMergeStrategy in assembly := {
   case PathList("module-info.class", _ @ _*) => MergeStrategy.discard
@@ -40,4 +43,13 @@ libraryDependencies ++= Seq(
   Scala.Monocle,
   Scala.MonocleMacro,
   Scala.Upperbound
+)
+addCommandAlias(
+  "build",
+  """|;
+     |clean;
+     |scalafmtCheck;
+     |test;
+     |scapegoat;
+  """.stripMargin
 )

@@ -11,7 +11,7 @@ object LocalRunnerDefinition {
     )
 }
 
-case class LocalRunnerDefinition(
+final case class LocalRunnerDefinition(
   id: Long,
   hc: Double,
   status: String

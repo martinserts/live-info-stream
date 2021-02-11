@@ -1,7 +1,7 @@
 package com.org.fplab.liveinfostream.state
 
-import cats.implicits._
 import cats.effect.Sync
+import cats.implicits._
 import com.org.fplab.liveinfostream.betfair.betting.state.BettingState
 import com.org.fplab.liveinfostream.betfair.navigation.state.NavigationState
 import com.org.fplab.liveinfostream.betfair.subscription.state.MarketSubscriptionState
@@ -10,7 +10,7 @@ import monocle._
 import monocle.macros.GenLens
 
 /** The root of application state */
-case class ApplicationState[F[_]](
+final case class ApplicationState[F[_]](
   marketSubscription: MarketSubscriptionState[F], // State of live stream data
   navigation: NavigationState,                    // State of navigation data (refreshed hourly)
   betting: BettingState,                          // State contains runner id/names
@@ -34,12 +34,12 @@ object ApplicationState {
 
   /** Initial state */
   def empty[F[_]: Sync]: F[ApplicationState[F]] =
-    for {
-      marketSubscriptionState <- MarketSubscriptionState.empty[F]
-    } yield ApplicationState(
-      marketSubscriptionState,
-      NavigationState.empty,
-      BettingState.empty,
-      WebServiceState.empty
-    )
+    MarketSubscriptionState.empty[F].map { marketSubscriptionState =>
+      ApplicationState(
+        marketSubscriptionState,
+        NavigationState.empty,
+        BettingState.empty,
+        WebServiceState.empty
+      )
+    }
 }

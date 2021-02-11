@@ -1,6 +1,6 @@
 package com.org.fplab.liveinfostream.betfair.subscription.models
 
-case class LocalPriceSize(
+final case class LocalPriceSize(
   price: Double,
   size: Double
 )

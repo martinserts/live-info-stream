@@ -12,7 +12,7 @@ import org.http4s.client.blaze._
 import scala.concurrent.ExecutionContext
 
 /** Navigation root. Children only of type "NavigationEventType" */
-case class NavigationRoot(
+final case class NavigationRoot(
   id: Int,
   name: String,
   children: List[NavigationEventType],

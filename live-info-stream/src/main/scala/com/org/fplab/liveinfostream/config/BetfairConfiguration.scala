@@ -17,8 +17,8 @@ final case class BetfairConfiguration(
 object BetfairConfiguration {
   def getConfiguration[F[_]](implicit blocker: Blocker): ConfigValue[BetfairConfiguration] =
     (
-      SecretFileConfigEntry.envSecretFile("BETFAIR_APP_KEY_FILE").or(env("BETFAIR_APP_KEY").as[String]).secret,
-      SecretFileConfigEntry.envSecretFile("BETFAIR_USERNAME_FILE").or(env("BETFAIR_USERNAME").as[String]).secret,
-      SecretFileConfigEntry.envSecretFile("BETFAIR_PASSWORD_FILE").or(env("BETFAIR_PASSWORD").as[String]).secret
-    ).parMapN(BetfairConfiguration(_, _, _))
+      (SecretFileConfigEntry.envSecretFile("BETFAIR_APP_KEY_FILE") or env("BETFAIR_APP_KEY")).as[String].secret,
+      (SecretFileConfigEntry.envSecretFile("BETFAIR_USERNAME_FILE") or env("BETFAIR_USERNAME")).as[String].secret,
+      (SecretFileConfigEntry.envSecretFile("BETFAIR_PASSWORD_FILE") or env("BETFAIR_PASSWORD")).as[String].secret
+    ).mapN(BetfairConfiguration(_, _, _))
 }

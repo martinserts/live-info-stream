@@ -12,7 +12,7 @@ object LocalMarket {
     )
 }
 
-case class LocalMarket(
+final case class LocalMarket(
   marketId: String,
   marketDefinition: LocalMarketDefinition,
   runners: LocalMarketRunnerList,

@@ -3,7 +3,7 @@ package com.org.fplab.liveinfostream.betfair.navigation.state
 import com.org.fplab.liveinfostream.betfair.navigation.models._
 import monocle._
 
-case class NavigationState(
+final case class NavigationState(
   root: Option[NavigationRoot],
   events: Map[String, String], // EventId, Event name
   markets: Map[String, String] // MarketId, Market name
@@ -12,18 +12,18 @@ case class NavigationState(
 object NavigationState {
   // Lenses
   val root: Optional[NavigationState, NavigationRoot] = Optional[NavigationState, NavigationRoot] { _.root } { r => _ =>
-    FromNavigationRoot(r)
+    fromNavigationRoot(r)
   }
 
-  def empty = new NavigationState(None, Map.empty, Map.empty)
+  def empty: NavigationState = NavigationState(None, Map.empty, Map.empty)
 
-  private def FromNavigationRoot(root: NavigationRoot): NavigationState = {
-    val entities = NavigationEntity.enumerate(root)
+  private def fromNavigationRoot(navigationRoot: NavigationRoot): NavigationState = {
+    val entities = NavigationEntity.enumerate(navigationRoot)
     val events   = entities.collect { case NavigationEventEntity(e) => e.id -> e.name }
     val markets  = entities.collect { case NavigationMarketEntity(e) => e.id -> e.name }
 
     NavigationState(
-      Some(root),
+      Some(navigationRoot),
       Map.from(events),
       Map.from(markets)
     )

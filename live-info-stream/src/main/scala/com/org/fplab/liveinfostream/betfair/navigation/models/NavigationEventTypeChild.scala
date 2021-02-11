@@ -7,16 +7,13 @@ import io.circe.Decoder
 
 sealed trait NavigationEventTypeChild
 
-case class NetcGroup(data: NavigationGroup) extends NavigationEventTypeChild
-case class NetcRace(data: NavigationRace)   extends NavigationEventTypeChild
+final case class NetcGroup(data: NavigationGroup) extends NavigationEventTypeChild
+final case class NetcRace(data: NavigationRace)   extends NavigationEventTypeChild
 
 object NavigationEventTypeChildCodec {
-  implicit lazy val decodeNetcGroup: Decoder[NetcGroup] = Decoder[NavigationGroup].map(NetcGroup(_))
-  implicit lazy val decodeNetcRace: Decoder[NetcRace]   = Decoder[NavigationRace].map(NetcRace(_))
+  implicit lazy val decodeNetcGroup: Decoder[NetcGroup] = Decoder[NavigationGroup].map(NetcGroup)
+  implicit lazy val decodeNetcRace: Decoder[NetcRace]   = Decoder[NavigationRace].map(NetcRace)
 
   implicit lazy val decodeNavigationEventTypeChild: Decoder[NavigationEventTypeChild] =
-    List[Decoder[NavigationEventTypeChild]](
-      Decoder[NetcGroup].widen,
-      Decoder[NetcRace].widen
-    ).reduceLeft(_ or _)
+    Decoder[NetcGroup].widen or Decoder[NetcRace].widen
 }

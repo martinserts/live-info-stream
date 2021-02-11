@@ -5,6 +5,7 @@ import com.org.fplab.liveinfostream.betfair.subscription.models.{
   LocalMarketRunner,
   LocalRunnerDefinitionList
 }
+import com.org.fplab.liveinfostream.utils.DoubleUtils._
 import com.org.fplab.liveinfostream.webservice.models.{GuiEvent, GuiMarket, GuiRunner}
 
 object MarketConverter {
@@ -40,7 +41,7 @@ object MarketConverter {
     val DefaultPriceIfMissing: Double = 0
 
     val status = runnerDefinitions.items
-      .find(r => r.id == localRunner.selectionId && r.hc == localRunner.hc)
+      .find(r => r.id == localRunner.selectionId && (r.hc ~== localRunner.hc))
       .map(r => r.status)
       .getOrElse("")
 

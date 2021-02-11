@@ -1,12 +1,9 @@
 package com.org.fplab.liveinfostream.betfair.subscription
 
-import cats.MonadError
-import cats.implicits._
 import cats.data._
 import cats.effect._
 import cats.effect.concurrent._
-import fs2._
-import fs2.concurrent._
+import cats.implicits._
 import com.betfair.esa.client.cache.market.MarketSnap
 import com.org.fplab.liveinfostream.betfair.subscription.limiter.RateLimiter
 import com.org.fplab.liveinfostream.betfair.subscription.limiter.RateLimiter.RateLimiterRegistry
@@ -15,6 +12,8 @@ import com.org.fplab.liveinfostream.betfair.subscription.state.MarketSubscriptio
 import com.org.fplab.liveinfostream.state.ApplicationState
 import com.org.fplab.liveinfostream.webservice.core.MarketChangeExtractor
 import com.org.fplab.liveinfostream.webservice.models.{ApiCommand, MarketStatusChangedCommand}
+import fs2._
+import fs2.concurrent._
 
 object MarketSubscription {
 
@@ -27,7 +26,7 @@ object MarketSubscription {
   }
 
   /** Starts queue reader */
-  def createMarketChangeQueueProcessorStream[F[_]: Sync: Concurrent: Timer](
+  def createMarketChangeQueueProcessorStream[F[_]: Concurrent: Timer](
     interrupter: SignallingRef[F, Boolean],
     stateRef: Ref[F, ApplicationState[F]],
     queue: Queue[F, LocalMarket],
@@ -41,7 +40,7 @@ object MarketSubscription {
                             .evalMap(processMarketChange[F](stateRef, _))
                             .unNone                 // Get rid of empty changes
                             .flatMap(commands => Stream.emits(commands))
-                            .evalMap(processCommand[F](rateLimiters)(_))
+                            .evalMap(processCommand[F](rateLimiters, _))
                             .unNone                 // Filter out commands, which where rejected by rate limiter
                             .map(command => Some(command.getJson.noSpaces))
                             .through(topic.publish) // Send changes to topic
@@ -49,7 +48,7 @@ object MarketSubscription {
     } yield stream
 
   /** Processes market change message */
-  private def processMarketChange[F[_]: Sync](
+  private def processMarketChange[F[_]](
     stateRef: Ref[F, ApplicationState[F]],
     localMarket: LocalMarket
   ): F[Option[List[ApiCommand]]] =
@@ -63,24 +62,20 @@ object MarketSubscription {
     */
   private def updateState[F[_]](updatedMarket: LocalMarket): State[ApplicationState[F], Option[List[ApiCommand]]] =
     for {
-      applicationState <- State.get[ApplicationState[F]]
-
-      marketsLens = ApplicationState.marketSubscription[F] composeLens MarketSubscriptionState.markets[F]
-      markets     = marketsLens.get(applicationState)
-
+      applicationState       <- State.get[ApplicationState[F]]
+      marketsLens             = ApplicationState.marketSubscription[F] composeLens MarketSubscriptionState.markets[F]
+      markets                 = marketsLens.get(applicationState)
       oldLocalMarket          = markets.get(updatedMarket.marketId)
       changesAsApiCommandList = oldLocalMarket.flatMap(MarketChangeExtractor.getStateChanges(_, updatedMarket))
-
-      updatedMarkets      = if (isAnyMarketObsolete(changesAsApiCommandList)) markets.removed(updatedMarket.marketId)
-                            else markets.updated(updatedMarket.marketId, updatedMarket)
-
-      newApplicationState = marketsLens.set(updatedMarkets)(applicationState)
-      _                  <- State.set[ApplicationState[F]](newApplicationState)
+      updatedMarkets          = if (isAnyMarketObsolete(changesAsApiCommandList)) markets.removed(updatedMarket.marketId)
+                                else markets.updated(updatedMarket.marketId, updatedMarket)
+      newApplicationState     = marketsLens.set(updatedMarkets)(applicationState)
+      _                      <- State.set[ApplicationState[F]](newApplicationState)
     } yield changesAsApiCommandList
 
   /** We should delete closed markets from our state */
   private def isAnyMarketObsolete(commands: Option[List[ApiCommand]]): Boolean =
-    commands.exists(_.exists(isMarketObsolete(_).isDefined))
+    commands.exists(_.exists(command => isMarketObsolete(command).isDefined))
 
   /** Returns marketId if obsolete */
   private def isMarketObsolete(command: ApiCommand): Option[String] =
@@ -92,67 +87,53 @@ object MarketSubscription {
   private def removeRateLimiters[F[_]: Sync](registryRef: Ref[F, RateLimiterRegistry[F]], marketId: String): F[Unit] =
     for {
       registry   <- registryRef.get
-      toBeRemoved = registry.toList.filter {
+      toBeRemoved = registry.filter {
                       case (_, RateLimiter(_, Some(id), _)) => id == marketId
+                      case _                                => false
                     }
-
-      _          <- toBeRemoved.map(_._2).traverse(_.stop) // Stop corresponding rate limiters
-
-      updatedRegistry = toBeRemoved.foldl(registry) {
-                          case (m: RateLimiterRegistry[F], (key, _)) => m.removed(key)
-                        }
-      _              <- registryRef.set(updatedRegistry) // Remove rate limiters from registry
+      _          <- toBeRemoved.values.toList.traverse(_.stop) // Stop corresponding rate limiters
+      _          <- registryRef.set(registry -- toBeRemoved.keys) // Remove rate limiters from registry
     } yield ()
 
-  private def processCommand[F[_]: Sync: Concurrent: Timer](
-    registryRef: Ref[F, RateLimiterRegistry[F]]
-  )(
+  private def processCommand[F[_]: Concurrent: Timer](
+    registryRef: Ref[F, RateLimiterRegistry[F]],
     command: ApiCommand
   ): F[Option[ApiCommand]] =
     isMarketObsolete(command) match {
-      case Some(marketId) =>
-        for {
-          _ <- removeRateLimiters(registryRef, marketId)
-        } yield (Option(command))
+      case Some(marketId) => removeRateLimiters(registryRef, marketId).as(Some(command))
       case None           => limitRate(registryRef, command)
     }
 
-  private def limitRate[F[_]: Sync: Concurrent: Timer](
+  private def limitRate[F[_]: Concurrent: Timer](
     registryRef: Ref[F, RateLimiterRegistry[F]],
     command: ApiCommand
   ): F[Option[ApiCommand]] =
     for {
       rateLimiter <- getOrCreateRateLimiter(registryRef, command)
+      success     <- rateLimiter.traverse { rl =>
+                       rl.limiter
+                         .submit(Sync[F].unit)
+                         .as(true)
+                         .handleError(_ => false)
+                     }
+    } yield if (success.getOrElse(true)) Some(command) else None
 
-      result <- rateLimiter match {
-                  case Some(rl) =>
-                    rl.limiter
-                      .submit(Sync[F].unit)      // Submit to rate limiter with dummy operation
-                      .map(_ => Option(command)) // If successful, return ApiCommand
-                      .handleError(_ => None)    // If not successful - return None
-                  case None     =>
-                    Sync[F].pure(Option(command)) // If there is no rate limiter, we send command unconditionally
-                }
-    } yield result
-
-  private def getOrCreateRateLimiter[F[_]: Sync: Concurrent: Timer](
+  private def getOrCreateRateLimiter[F[_]: Concurrent: Timer](
     registryRef: Ref[F, RateLimiterRegistry[F]],
     command: ApiCommand
   ): F[Option[RateLimiter[F]]] =
     command.getRateLimiter.traverse(limitDefinition =>
       for {
-        registry <- registryRef.get
-
-        rateLimiter <-
-          registry.get(limitDefinition.key) match {
-            case Some(rateLimiter) => Sync[F].pure(rateLimiter) // Rate limited already exists in registry - return it
-            case None              =>
-              RateLimiter.launch(
-                limitDefinition, // Rate limiter not found - launch new one
-                command.getAssociatedMarketId,
-                registryRef
-              )
-          }
+        registry    <- registryRef.get
+        rateLimiter <- OptionT
+                         .fromOption[F](registry.get(limitDefinition.key))
+                         .getOrElseF(
+                           RateLimiter.launch(
+                             limitDefinition, // Rate limiter not found - launch new one
+                             command.getAssociatedMarketId,
+                             registryRef
+                           )
+                         )
       } yield rateLimiter
     )
 }

@@ -1,11 +1,8 @@
 package com.org.fplab.liveinfostream.webservice.controllers
 
-import java.time.Instant
-
 import cats._
-import cats.implicits._
 import cats.effect.Clock
-
+import cats.implicits._
 import com.org.fplab.liveinfostream.betfair.betting.state.BettingState
 import com.org.fplab.liveinfostream.betfair.navigation.state.NavigationState
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
@@ -13,46 +10,43 @@ import com.org.fplab.liveinfostream.state.ApplicationState
 import com.org.fplab.liveinfostream.webservice.core.MarketConverter
 import com.org.fplab.liveinfostream.webservice.models.GuiMarket
 
-import scala.concurrent.duration.{MILLISECONDS, HOURS}
+import java.time.Instant
 
 /** Market list API */
 object MarketListController {
 
   /** Market list fetched initially by client. All subsequent updates are via web socket messages */
-  def getMarketList[F[_]: Functor](state: ApplicationState[F])(clock: Clock[F]): F[List[GuiMarket]] =
-    for {
-      realTime    <- clock.realTime(MILLISECONDS)
-      staleInstant = Instant.ofEpochMilli(realTime).minusSeconds(60 * 60)
-
-      navState           = state.navigation
-      marketNameResolver = getMarketName(navState)(_)
-      eventNameResolver  = getEventName(navState)(_)
-      runnerNameResolver = getRunnerName(state.betting)(_)
-
-      result = state.marketSubscription.markets.values
-                 .filter(m => isMarketVisible(m) && !isMarketStale(staleInstant)(m))
-                 .map(MarketConverter.toGuiMarket(marketNameResolver, eventNameResolver, runnerNameResolver))
-                 .toList
-    } yield result
+  def marketList[F[_]: Functor: Clock](state: ApplicationState[F]): F[List[GuiMarket]] =
+    Clock[F].instantNow.map { now =>
+      val staleInstant = now.minusSeconds(60 * 60)
+      val navState     = state.navigation
+      state.marketSubscription.markets.values
+        .filter(m => marketVisible(m) && !marketStale(staleInstant, m))
+        .map(MarketConverter.toGuiMarket(marketName(navState), eventName(navState), runnerName(state.betting)))
+        .toList
+    }
 
   /** True, if market should be shown */
-  private def isMarketVisible(market: LocalMarket): Boolean = {
+  private def marketVisible(market: LocalMarket): Boolean = {
     val md = market.marketDefinition
     md.turnInPlayEnabled && md.bettingType == "ODDS" && md.marketType == "WIN" && md.status != "CLOSED"
   }
 
-  private def isMarketStale(staleInstant: Instant)(market: LocalMarket): Boolean =
+  private def marketStale(staleInstant: Instant, market: LocalMarket): Boolean =
     market.marketDefinition.marketTime.compareTo(staleInstant) < 0
 
   /** Fetches market name from navigation data */
-  private def getMarketName(navState: NavigationState)(marketId: String): String =
+  private def marketName(navState: NavigationState): String => String = { marketId =>
     navState.markets.getOrElse(marketId, "Unknown market")
+  }
 
   /** Fetches event name from navigation data */
-  private def getEventName(navState: NavigationState)(eventId: String): String =
+  private def eventName(navState: NavigationState): String => String = { eventId =>
     navState.events.getOrElse(eventId, "Unknown event")
+  }
 
   /** Fetches runner name from betting data */
-  private def getRunnerName(bettingState: BettingState)(runnerId: Long): String =
+  private def runnerName(bettingState: BettingState): Long => String = { runnerId =>
     bettingState.runners.getOrElse(runnerId, "Unknown runner")
+  }
 }

@@ -15,9 +15,9 @@ object AppConfiguration {
   def getConfiguration[F[_]: Async: ContextShift](blocker: Blocker): F[AppConfiguration] = {
     implicit val b: Blocker = blocker
     (
-      env("DEV_ENVIRONMENT").as[Boolean].or(ConfigValue.default(false)),
+      env("DEV_ENVIRONMENT").as[Boolean] or ConfigValue.default(false),
       BetfairConfiguration.getConfiguration,
       WebServiceConfiguration.getConfiguration
-    ).parMapN(AppConfiguration(_, _, _)).load[F]
+    ).mapN(AppConfiguration.apply).load[F]
   }
 }

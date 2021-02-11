@@ -3,6 +3,7 @@ package com.org.fplab.liveinfostream.webservice.core
 import cats.implicits._
 import cats.data.Chain
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
+import com.org.fplab.liveinfostream.utils.DoubleUtils._
 import com.org.fplab.liveinfostream.webservice.models.{
   ApiCommand,
   GuiMarket,
@@ -38,7 +39,7 @@ object MarketChangeExtractor {
 
   private def findTradedVolumeChanges(oldMarket: GuiMarket, newMarket: GuiMarket): Chain[ApiCommand] = {
     val newTradedVolume = newMarket.tradedVolume
-    if (oldMarket.tradedVolume != newTradedVolume)
+    if (oldMarket.tradedVolume ~!= newTradedVolume)
       Chain.one(TradedVolumeChangedCommand(newMarket.id, newTradedVolume))
     else Chain.empty
   }
@@ -58,16 +59,16 @@ object MarketChangeExtractor {
   }
 
   private def findCorrespondingRunner(runners: List[GuiRunner])(runner: GuiRunner): Option[GuiRunner] =
-    runners.find(r => r.id == runner.id && r.hc == runner.hc)
+    runners.find(r => r.id == runner.id && (r.hc ~== runner.hc))
 
   private def getRunnerPriceChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
-    if (a.price != b.price) Some(RunnerPriceChangedCommand(market.id, b.id, b.hc, b.price)) else None
+    if (a.price ~!= b.price) Some(RunnerPriceChangedCommand(market.id, b.id, b.hc, b.price)) else None
 
   private def getRunnerStatusChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
     if (a.status != b.status) Some(RunnerStatusChangedCommand(market.id, b.id, b.hc, b.status)) else None
 
   private def getRunnerVolumeChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): Option[ApiCommand] =
-    if (a.volume != b.volume) Some(RunnerVolumeChangedCommand(market.id, b.id, b.hc, b.volume)) else None
+    if (a.volume ~!= b.volume) Some(RunnerVolumeChangedCommand(market.id, b.id, b.hc, b.volume)) else None
 
   private def extractRunnerChanges(market: GuiMarket)(a: GuiRunner, b: GuiRunner): List[ApiCommand] =
     List(

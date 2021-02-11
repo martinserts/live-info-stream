@@ -7,38 +7,38 @@ final case class NavigationMarketEntity(market: NavigationMarket) extends Naviga
 
 object NavigationEntity {
   def enumerate(root: NavigationRoot): List[NavigationEntity] = {
-    def EnumerateNavigationEventType(eventType: NavigationEventType): List[NavigationEntity] =
-      eventType.children.map(_.flatMap(EnumerateNavigationEventTypeChild)).getOrElse(List.empty)
+    def enumerateNavigationEventType(eventType: NavigationEventType): List[NavigationEntity] =
+      eventType.children.map(_.flatMap(enumerateNavigationEventTypeChild)).getOrElse(List.empty)
 
-    def EnumerateNavigationEventTypeChild(eventTypeChild: NavigationEventTypeChild): List[NavigationEntity] =
+    def enumerateNavigationEventTypeChild(eventTypeChild: NavigationEventTypeChild): List[NavigationEntity] =
       eventTypeChild match {
-        case NetcGroup(g) => EnumerateNavigationGroup(g)
-        case NetcRace(r)  => EnumerateNavigationRace(r)
+        case NetcGroup(g) => enumerateNavigationGroup(g)
+        case NetcRace(r)  => enumerateNavigationRace(r)
       }
 
-    def EnumerateNavigationGroup(group: NavigationGroup): List[NavigationEntity] = {
-      val children = group.children.map(_.flatMap(EnumerateNavigationGroupChild)).getOrElse(List.empty)
+    def enumerateNavigationGroup(group: NavigationGroup): List[NavigationEntity] = {
+      val children = group.children.map(_.flatMap(enumerateNavigationGroupChild)).getOrElse(List.empty)
       if (group.isEvent)
         NavigationEventEntity(group) :: children
       else
         children
     }
 
-    def EnumerateNavigationGroupChild(groupChild: NavigationGroupChild): List[NavigationEntity] =
+    def enumerateNavigationGroupChild(groupChild: NavigationGroupChild): List[NavigationEntity] =
       groupChild match {
-        case NgcGroup(g)  => EnumerateNavigationGroup(g)
-        case NgcMarket(m) => EnumerateNavigationMarket(m)
+        case NgcGroup(g)  => enumerateNavigationGroup(g)
+        case NgcMarket(m) => enumerateNavigationMarket(m)
       }
 
-    def EnumerateNavigationMarket(market: NavigationMarket): List[NavigationEntity] =
+    def enumerateNavigationMarket(market: NavigationMarket): List[NavigationEntity] =
       List(NavigationMarketEntity(market))
 
-    def EnumerateNavigationRace(race: NavigationRace): List[NavigationEntity] =
-      race.children.map(_.flatMap(EnumerateNavigationMarket)).getOrElse(List.empty)
+    def enumerateNavigationRace(race: NavigationRace): List[NavigationEntity] =
+      race.children.map(_.flatMap(enumerateNavigationMarket)).getOrElse(List.empty)
 
-    def EnumerateNavigationRoot(root: NavigationRoot): List[NavigationEntity] =
-      root.children.flatMap(EnumerateNavigationEventType)
+    def enumerateNavigationRoot(navigationRoot: NavigationRoot): List[NavigationEntity] =
+      navigationRoot.children.flatMap(enumerateNavigationEventType)
 
-    EnumerateNavigationRoot(root)
+    enumerateNavigationRoot(root)
   }
 }

@@ -11,4 +11,4 @@ object LocalMarketRunnerList {
     )
 }
 
-case class LocalMarketRunnerList(items: List[LocalMarketRunner])
+final case class LocalMarketRunnerList(items: List[LocalMarketRunner])

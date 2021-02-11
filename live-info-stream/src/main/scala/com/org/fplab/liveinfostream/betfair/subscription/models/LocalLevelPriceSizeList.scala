@@ -11,4 +11,4 @@ object LocalLevelPriceSizeList {
     )
 }
 
-case class LocalLevelPriceSizeList(items: List[LocalLevelPriceSize])
+final case class LocalLevelPriceSizeList(items: List[LocalLevelPriceSize])

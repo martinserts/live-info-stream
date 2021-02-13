@@ -53,5 +53,7 @@ object RunnerTradedVolume {
   )
 
   implicit val labels: CollectorLabels[Labels] =
-    CollectorLabels.instance(labels => NonEmptyList.of(labels.marketId, labels.runnerId))
+    CollectorLabels.instance(labels =>
+      NonEmptyList.of(labels.marketId, labels.marketName, labels.runnerId, labels.runnerName, labels.inPlay)
+    )
 }

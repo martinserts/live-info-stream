@@ -30,14 +30,14 @@ object MarketSubscription {
   ): F[Unit] = {
     val localMarket = LocalMarket.fromMarketSnap(market)
     for {
-      _     <- Stream.emit(localMarket).through(queue.enqueue).compile.drain
-      state <- applicationState.get
-      market = MarketConverter.toGuiMarket(
-                 marketNameResolver = state.navigation.markets.get,
-                 eventNameResolver = state.navigation.events.get,
-                 runnerNameResolver = state.betting.runners.get
-               )(localMarket)
-      _     <- market.traverse_(prometheus.processMessage)
+      _        <- Stream.emit(localMarket).through(queue.enqueue).compile.drain
+      state    <- applicationState.get
+      guiMarket = MarketConverter.toGuiMarket(
+                    marketNameResolver = state.navigation.markets.get,
+                    eventNameResolver = state.navigation.events.get,
+                    runnerNameResolver = state.betting.runners.get
+                  )(localMarket)
+      _        <- guiMarket.traverse_(prometheus.processMessage)
     } yield ()
   }
 

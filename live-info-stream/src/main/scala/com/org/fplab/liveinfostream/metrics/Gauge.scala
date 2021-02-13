@@ -42,7 +42,7 @@ object Gauge {
     Resource(resource)
   }
 
-  def apply[F[_]: Sync, A](
+  def apply[F[_], A](
     children: ChildCollection[F, A, Gauge.Child[F]]
   ): Gauge[F, A] =
     new Gauge[F, A] {

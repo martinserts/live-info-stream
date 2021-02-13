@@ -41,17 +41,17 @@ object Prometheus {
 
       def processMessage(market: GuiMarket): F[Unit] =
         Clock[F].instantNow.flatMap { now =>
-          val isNearOrStarted = market.marketTime
+          val nearOrStarted = market.marketTime
             .minusMillis(ProcessBeforeEvent.toMillis)
             .isBefore(now)
-          val isStale         = market.marketTime
-            .plusMillis(StopAfterEvent.toMillis)
-            .isBefore(now)
-          Monad[F].whenA(isNearOrStarted && !isStale) {
+          Monad[F].whenA(nearOrStarted) {
             val metrics: List[MetricsCollector[F]]     = List(marketTradedVolume, runnerPrice, runnerTradedVolume)
             val closed                                 = market.status == "CLOSED"
+            val stale                                  = market.marketTime
+              .plusMillis(StopAfterEvent.toMillis)
+              .isBefore(now)
             val action: MetricsCollector[F] => F[Unit] =
-              if (closed) _.remove(market.id) else _.process(market)
+              if (closed || stale) _.remove(market.id) else _.process(market)
             metrics.traverse_(action)
           }
         }

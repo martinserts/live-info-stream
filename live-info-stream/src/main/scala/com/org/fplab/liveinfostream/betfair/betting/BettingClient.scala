@@ -11,7 +11,6 @@ import com.org.fplab.liveinfostream.betfair.betting.state.BettingState
 import com.org.fplab.liveinfostream.state.ApplicationState
 import fs2.Stream
 import fs2.concurrent.SignallingRef
-import fs2.text.utf8Decode
 import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.optics.JsonPath._
@@ -37,23 +36,20 @@ class BettingClient[F[_]: ConcurrentEffect](sessionId: String)(implicit C: Confi
                         )
         request       = Request[F](Method.POST, Uri.unsafeFromString(config.bettingUri), headers = headers)
                           .withEntity(listMarketCatalogueRequest)
-        jsonResponse <- client.run(request).use { response =>
-                          response.body.through(utf8Decode).compile.string
-                        }
+        jsonResponse <- client.expect[String](request)
       } yield Map.from(BettingClient.parseRunners(jsonResponse).map(r => r.selectionId -> r.runnerName))
     }
 
   /** list market catalogue API request as JSON */
-  private def listMarketCatalogueRequest: Json =
-    RpcRequest(
-      method = "listMarketCatalogue",
-      params = ListMarketCatalogueRequest(
-        MarketFilter(eventTypeIds = List(HorseRacing), turnInPlayEnabled = true, marketBettingTypes = List("ODDS")),
-        marketProjection = List("RUNNER_DESCRIPTION"),
-        sort = "FIRST_TO_START",
-        maxResults = 1000
-      )
-    ).getJson
+  private def listMarketCatalogueRequest: Json = {
+    val listMarketCatalogueRequest: ListMarketCatalogueRequest = ListMarketCatalogueRequest(
+      MarketFilter(eventTypeIds = List(HorseRacing), turnInPlayEnabled = true, marketBettingTypes = List("ODDS")),
+      marketProjection = List("RUNNER_DESCRIPTION"),
+      sort = "FIRST_TO_START",
+      maxResults = 1000
+    )
+    RpcRequest("listMarketCatalogue", listMarketCatalogueRequest).getJson
+  }
 }
 
 object BettingClient {

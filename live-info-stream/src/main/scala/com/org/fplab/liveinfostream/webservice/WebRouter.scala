@@ -23,7 +23,8 @@ object WebRouter {
   def createWebServerQueue[F[_]: Timer: ConcurrentEffect: ContextShift](
     interrupter: SignallingRef[F, Boolean],
     stateRef: Ref[F, ApplicationState[F]],
-    topic: Topic[F, Option[String]]
+    topic: Topic[F, Option[String]],
+    metrics: F[String]
   )(implicit
     C: ConfigurationAsk[F]
   ): F[Stream[F, ExitCode]] =
@@ -35,7 +36,7 @@ object WebRouter {
       staticFiles = fileService(FileService.Config[F](config.staticFilesRoot, blocker))
 
       router     = Router(
-                     "/api" -> new ApiEndpoints(stateRef, topic).eventsEndpoint,
+                     "/api" -> new ApiEndpoints(stateRef, topic, metrics).eventsEndpoint,
                      ""     -> staticFiles
                    )
       app        = router.orNotFound

@@ -22,6 +22,7 @@ object Dependencies {
     val Circe      = "0.13.0"
     val Monocle    = "2.1.0"
     val Upperbound = "0.3.0"
+    val Prometheus = "0.10.0"
   }
 
   object Java {
@@ -36,6 +37,8 @@ object Dependencies {
     val Slf4j             = "org.slf4j"                  % "slf4j-api"                   % VersionOf.Slf4j
     val Slf4jExt          = "org.slf4j"                  % "slf4j-ext"                   % VersionOf.Slf4j
     val Slf4jSimple       = "org.slf4j"                  % "slf4j-simple"                % VersionOf.Slf4j
+    val PrometheusCommon  = "io.prometheus"              % "simpleclient_common"         % VersionOf.Prometheus
+    val PrometheusClient  = "io.prometheus"              % "simpleclient"                % VersionOf.Prometheus
   }
 
   object Scala {

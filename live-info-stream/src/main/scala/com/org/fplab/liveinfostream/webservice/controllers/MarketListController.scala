@@ -22,7 +22,7 @@ object MarketListController {
       val navState     = state.navigation
       state.marketSubscription.markets.values
         .filter(m => marketVisible(m) && !marketStale(staleInstant, m))
-        .map(MarketConverter.toGuiMarket(marketName(navState), eventName(navState), runnerName(state.betting)))
+        .flatMap(MarketConverter.toGuiMarket(marketName(navState), eventName(navState), runnerName(state.betting)))
         .toList
     }
 
@@ -36,17 +36,17 @@ object MarketListController {
     market.marketDefinition.marketTime.compareTo(staleInstant) < 0
 
   /** Fetches market name from navigation data */
-  private def marketName(navState: NavigationState): String => String = { marketId =>
-    navState.markets.getOrElse(marketId, "Unknown market")
+  private def marketName(navState: NavigationState): String => Option[String] = { marketId =>
+    Some(navState.markets.getOrElse(marketId, "Unknown market"))
   }
 
   /** Fetches event name from navigation data */
-  private def eventName(navState: NavigationState): String => String = { eventId =>
-    navState.events.getOrElse(eventId, "Unknown event")
+  private def eventName(navState: NavigationState): String => Option[String] = { eventId =>
+    Some(navState.events.getOrElse(eventId, "Unknown event"))
   }
 
   /** Fetches runner name from betting data */
-  private def runnerName(bettingState: BettingState): Long => String = { runnerId =>
-    bettingState.runners.getOrElse(runnerId, "Unknown runner")
+  private def runnerName(bettingState: BettingState): Long => Option[String] = { runnerId =>
+    Some(bettingState.runners.getOrElse(runnerId, "Unknown runner"))
   }
 }

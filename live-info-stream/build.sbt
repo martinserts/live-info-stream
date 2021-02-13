@@ -25,6 +25,8 @@ libraryDependencies ++= Seq(
   Java.Slf4j,
   Java.Slf4jExt,
   Java.Slf4jSimple,
+  Java.PrometheusCommon,
+  Java.PrometheusClient,
   Scala.ScalaTest,
   Scala.Log4s,
   Scala.Cats,

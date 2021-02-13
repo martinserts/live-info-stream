@@ -14,7 +14,7 @@ sealed trait ApiCommand {
   val command: String
   def getJson: Json
   def getAssociatedMarketId: Option[String]
-  def getRateLimiter: Option[ApiCommandLimitRate] // None - command does not support rate limiting
+  def getRateLimiter: Option[ApiCommandLimitRate] // None means command does not support rate limiting
 }
 
 final case class ServerTimeCommand(

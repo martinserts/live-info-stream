@@ -1,40 +1,30 @@
 package com.org.fplab.liveinfostream.webservice.core
 
-import cats.implicits._
 import cats.data.Chain
+import cats.implicits._
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
 import com.org.fplab.liveinfostream.utils.DoubleUtils._
-import com.org.fplab.liveinfostream.webservice.models.{
-  ApiCommand,
-  GuiMarket,
-  GuiRunner,
-  MarketInPlayChangedCommand,
-  MarketStatusChangedCommand,
-  RunnerPriceChangedCommand,
-  RunnerStatusChangedCommand,
-  RunnerVolumeChangedCommand,
-  TradedVolumeChangedCommand
-}
+import com.org.fplab.liveinfostream.webservice.models._
 
 object MarketChangeExtractor {
 
   /** Compares two local markets and returns list of changes in form of ApiCommands */
   def getStateChanges(oldState: LocalMarket, newState: LocalMarket): Option[List[ApiCommand]] = {
     // We done care about market, runner name changes (I guess they never happen)
-    def convertMarket: LocalMarket => GuiMarket =
-      MarketConverter.toGuiMarket(Function.const(""), Function.const(""), Function.const(""))
+    def convertMarket: LocalMarket => Option[GuiMarket] =
+      MarketConverter.toGuiMarket(Function.const(Some("")), Function.const(Some("")), Function.const(Some("")))
 
-    val oldMarket = convertMarket(oldState)
-    val newMarket = convertMarket(newState)
+    (convertMarket(oldState), convertMarket(newState)).mapN {
+      case (oldMarket, newMarket) =>
+        val changes = List(
+          findTradedVolumeChanges(oldMarket, newMarket),
+          findMarketInPlayChanges(oldMarket, newMarket),
+          findMarketStatusChanges(oldMarket, newMarket),
+          findRunnersChanges(oldMarket, newMarket)
+        ).combineAll
 
-    val changes = List(
-      findTradedVolumeChanges(oldMarket, newMarket),
-      findMarketInPlayChanges(oldMarket, newMarket),
-      findMarketStatusChanges(oldMarket, newMarket),
-      findRunnersChanges(oldMarket, newMarket)
-    ).combineAll
-
-    if (changes.isEmpty) None else Some(changes.toList)
+        if (changes.isEmpty) None else Some(changes.toList)
+    }.flatten
   }
 
   private def findTradedVolumeChanges(oldMarket: GuiMarket, newMarket: GuiMarket): Chain[ApiCommand] = {

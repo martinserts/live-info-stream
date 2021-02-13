@@ -18,7 +18,8 @@ import org.http4s.websocket._
 
 class ApiEndpoints[F[_]: Concurrent: Clock](
   stateRef: Ref[F, ApplicationState[F]],
-  topic: Topic[F, Option[String]]
+  topic: Topic[F, Option[String]],
+  metrics: F[String]
 ) extends Http4sDsl[F] {
 
   def eventsEndpoint: HttpRoutes[F] =
@@ -30,6 +31,10 @@ class ApiEndpoints[F[_]: Concurrent: Clock](
           markets <- MarketListController.marketList(state)
           resp    <- Ok(markets.asJson)
         } yield resp
+
+      /** Prometheus metrics */
+      case GET -> Root / "metrics"          =>
+        metrics.flatMap(Ok(_))
 
       /** Web socket */
       case GET -> Root / "ws"               =>

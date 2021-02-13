@@ -15,7 +15,7 @@ import com.org.fplab.liveinfostream.ConfigurationAsk
 object NativeBetfairSubscription {
 
   /** Subscription resource, that will stop connection of application stop */
-  def createResource[F[_]: Sync](
+  def make[F[_]: Sync](
     callback: (MarketSnap) => Unit
   )(implicit
     C: ConfigurationAsk[F]

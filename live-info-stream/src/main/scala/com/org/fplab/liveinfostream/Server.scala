@@ -9,6 +9,7 @@ import com.org.fplab.liveinfostream.betfair.navigation.NavigationStream
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
 import com.org.fplab.liveinfostream.betfair.subscription.{MarketSubscription, NativeBetfairSubscription}
 import com.org.fplab.liveinfostream.config.AppConfiguration
+import com.org.fplab.liveinfostream.metrics.Prometheus
 import com.org.fplab.liveinfostream.state.ApplicationState
 import com.org.fplab.liveinfostream.webservice.WebRouter
 import fs2._
@@ -25,37 +26,42 @@ object Server extends IOApp {
 
       // NativeBetfairSubscription will fill this queue, but MarketSubscription will read it
       marketChangeQueue <- Queue.bounded[IO, LocalMarket](config.betfair.marketChangeQueueSize)
+      emptyState        <- ApplicationState.empty[IO]
+      applicationState  <- Ref.of[IO, ApplicationState[IO]](emptyState)
       _                 <- {
         implicit val configAsk: ApplicativeAsk[IO, AppConfiguration] =
           ApplicativeAsk.const[IO, AppConfiguration](config)
-        NativeBetfairSubscription
-          .createResource[IO](
-            // This will be fired by Java betfair library in its own thread, that we do not control. So we need run IO here
-            MarketSubscription.onExternalMessage(_, marketChangeQueue).unsafeRunSync()
-          )
-          .use(betfairSubscription =>
-            mainProcess(interrupter, betfairSubscription, marketChangeQueue)
-              .guarantee(interrupter.set(true))
-          )
+
+        Prometheus.make[IO].use { prometheus =>
+          NativeBetfairSubscription
+            .make[IO](
+              // This will be fired by Java betfair library in its own thread, that we do not control. So we need run IO here
+              MarketSubscription.onExternalMessage(_, marketChangeQueue, applicationState, prometheus).unsafeRunSync()
+            )
+            .use(betfairSubscription =>
+              mainProcess(interrupter, betfairSubscription, marketChangeQueue, applicationState, prometheus.metrics)
+                .guarantee(interrupter.set(true))
+            )
+        }
       }
     } yield ExitCode.Success
 
   private def mainProcess[F[_]: ConcurrentEffect: Timer: ContextShift](
     interrupter: SignallingRef[F, Boolean],
     subscription: NativeBetfairSubscription,
-    marketChangeQueue: Queue[F, LocalMarket]
+    marketChangeQueue: Queue[F, LocalMarket],
+    applicationState: Ref[F, ApplicationState[F]],
+    metrics: F[String]
   )(implicit
     C: ConfigurationAsk[F]
   ): F[Unit] =
     for {
-      emptyState       <- ApplicationState.empty
-      applicationState <- Ref.of[F, ApplicationState[F]](emptyState)
       // Topic with JSON messages to be sent to client
-      topic            <- Topic[F, Option[String]](None)
+      topic <- Topic[F, Option[String]](None)
 
       sessionIdReader  = Sync[F].delay(subscription.getSessionId)
       // Web server API (including web sockets)
-      webServerStream <- WebRouter.createWebServerQueue(interrupter, applicationState, topic)
+      webServerStream <- WebRouter.createWebServerQueue(interrupter, applicationState, topic, metrics)
       _               <- Stream(
                            // Betfair navigation info (refreshed every hour)
                            NavigationStream.createNavigationAutoUpdateStream(interrupter, applicationState, sessionIdReader),

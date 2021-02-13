@@ -9,8 +9,9 @@ import com.org.fplab.liveinfostream.betfair.subscription.limiter.RateLimiter
 import com.org.fplab.liveinfostream.betfair.subscription.limiter.RateLimiter.RateLimiterRegistry
 import com.org.fplab.liveinfostream.betfair.subscription.models.LocalMarket
 import com.org.fplab.liveinfostream.betfair.subscription.state.MarketSubscriptionState
+import com.org.fplab.liveinfostream.metrics.Prometheus
 import com.org.fplab.liveinfostream.state.ApplicationState
-import com.org.fplab.liveinfostream.webservice.core.MarketChangeExtractor
+import com.org.fplab.liveinfostream.webservice.core.{MarketChangeExtractor, MarketConverter}
 import com.org.fplab.liveinfostream.webservice.models.{ApiCommand, MarketStatusChangedCommand}
 import fs2._
 import fs2.concurrent._
@@ -19,10 +20,25 @@ object MarketSubscription {
 
   /** This is called from Betfair Java api
     * Put the message into queue, which will be later read by another process
+    * Store metrics in Prometheus
     */
-  def onExternalMessage[F[_]: Sync](market: MarketSnap, queue: Queue[F, LocalMarket]): F[Unit] = {
+  def onExternalMessage[F[_]: Sync](
+    market: MarketSnap,
+    queue: Queue[F, LocalMarket],
+    applicationState: Ref[F, ApplicationState[F]],
+    prometheus: Prometheus[F]
+  ): F[Unit] = {
     val localMarket = LocalMarket.fromMarketSnap(market)
-    Stream.emit(localMarket).through(queue.enqueue).compile.drain
+    for {
+      _     <- Stream.emit(localMarket).through(queue.enqueue).compile.drain
+      state <- applicationState.get
+      market = MarketConverter.toGuiMarket(
+                 marketNameResolver = state.navigation.markets.get,
+                 eventNameResolver = state.navigation.events.get,
+                 runnerNameResolver = state.betting.runners.get
+               )(localMarket)
+      _     <- market.traverse_(prometheus.processMessage)
+    } yield ()
   }
 
   /** Starts queue reader */
@@ -37,7 +53,7 @@ object MarketSubscription {
       rateLimitersLens  = ApplicationState.marketSubscription[F] composeLens MarketSubscriptionState.rateLimiters[F]
       rateLimiters      = rateLimitersLens.get(applicationState)
       stream           <- queue.dequeue
-                            .evalMap(processMarketChange[F](stateRef, _))
+                            .evalMap(localMarket => stateRef.modifyState(updateState(localMarket)))
                             .unNone                 // Get rid of empty changes
                             .flatMap(commands => Stream.emits(commands))
                             .evalMap(processCommand[F](rateLimiters, _))
@@ -46,13 +62,6 @@ object MarketSubscription {
                             .through(topic.publish) // Send changes to topic
                             .interruptWhen(interrupter)
     } yield stream
-
-  /** Processes market change message */
-  private def processMarketChange[F[_]](
-    stateRef: Ref[F, ApplicationState[F]],
-    localMarket: LocalMarket
-  ): F[Option[List[ApiCommand]]] =
-    stateRef.modifyState(updateState(localMarket))
 
   /** Updates market subscription state
     *
@@ -101,7 +110,7 @@ object MarketSubscription {
   ): F[Option[ApiCommand]] =
     isMarketObsolete(command) match {
       case Some(marketId) => removeRateLimiters(registryRef, marketId).as(Some(command))
-      case None           => limitRate(registryRef, command)
+      case None           => limitRate(registryRef, command) // TODO: OptionT.semiFlatmap
     }
 
   private def limitRate[F[_]: Concurrent: Timer](

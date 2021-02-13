@@ -1,5 +1,6 @@
 package com.org.fplab.liveinfostream.webservice.core
 
+import cats.implicits._
 import com.org.fplab.liveinfostream.betfair.subscription.models.{
   LocalMarket,
   LocalMarketRunner,
@@ -12,32 +13,37 @@ object MarketConverter {
 
   /** Converts LocalMarket to GuiMarket and augments with missing data */
   def toGuiMarket(
-    marketNameResolver: String => String,
-    eventNameResolver: String => String,
-    runnerNameResolver: Long => String
+    marketNameResolver: String => Option[String],
+    eventNameResolver: String => Option[String],
+    runnerNameResolver: Long => Option[String]
   )(
     market: LocalMarket
-  ): GuiMarket = {
+  ): Option[GuiMarket] = {
     val md = market.marketDefinition
-    GuiMarket(
-      id = market.marketId,
-      name = marketNameResolver(market.marketId),
-      inPlay = md.inPlay,
-      marketTime = md.marketTime,
-      status = md.status,
-      event = GuiEvent(md.eventId, eventNameResolver(md.eventId)),
-      runners = market.runners.items.map(toGuiRunner(runnerNameResolver, market.marketDefinition.runners)),
-      tradedVolume = market.tradedVolume
-    )
+    (marketNameResolver(market.marketId), eventNameResolver(md.eventId)).mapN {
+      case (marketName, eventName) =>
+        GuiMarket(
+          id = market.marketId,
+          name = marketName,
+          inPlay = md.inPlay,
+          marketTime = md.marketTime,
+          status = md.status,
+          event = GuiEvent(md.eventId, eventName),
+          runners = market.runners.items
+            .traverse(toGuiRunner(runnerNameResolver, market.marketDefinition.runners))
+            .getOrElse(List.empty),
+          tradedVolume = market.tradedVolume
+        )
+    }
   }
 
   /** Converts LocalMarketRunner to GuiRunner */
   private def toGuiRunner(
-    runnerNameResolver: Long => String,
+    runnerNameResolver: Long => Option[String],
     runnerDefinitions: LocalRunnerDefinitionList
   )(
     localRunner: LocalMarketRunner
-  ): GuiRunner = {
+  ): Option[GuiRunner] = {
     val DefaultPriceIfMissing: Double = 0
 
     val status = runnerDefinitions.items
@@ -45,13 +51,15 @@ object MarketConverter {
       .map(r => r.status)
       .getOrElse("")
 
-    GuiRunner(
-      id = localRunner.selectionId,
-      hc = localRunner.hc,
-      name = runnerNameResolver(localRunner.selectionId),
-      price = localRunner.bestAvailableToBet.items.find(_.level == 1).map(_.price).getOrElse(DefaultPriceIfMissing),
-      status = status,
-      volume = localRunner.totalVolume
-    )
+    runnerNameResolver(localRunner.selectionId).map { runnerName =>
+      GuiRunner(
+        id = localRunner.selectionId,
+        hc = localRunner.hc,
+        name = runnerName,
+        price = localRunner.bestAvailableToBet.items.find(_.level == 1).map(_.price).getOrElse(DefaultPriceIfMissing),
+        status = status,
+        volume = localRunner.totalVolume
+      )
+    }
   }
 }

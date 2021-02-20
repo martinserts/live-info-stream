@@ -34,9 +34,20 @@
                :pagination.sync="pagination"
                :row-key="row => row.id">
                <template v-slot:top="props">
-                 <div class="col-2 q-table__title">{{ title }}</div>
+                 <div class="col-grow q-table__title">{{ title }}</div>
                  <q-space />
-                 <div v-if="isMarketClosed">
+                 <div class="col-auto">
+                   <q-tooltip v-if="!chartEnabled">
+                     Charts are available 20 minutes before the race
+                   </q-tooltip>
+                   <q-btn flat
+                     label="Detailed charts"
+                     icon="show_chart"
+                     :disable="!chartEnabled"
+                     @click="openCharts">
+                   </q-btn>
+                 </div>
+                 <div v-if="isMarketClosed" class="col-auto">
                    <q-btn flat icon="delete_forever" @click="removeMarket">Remove market</q-btn>
                  </div>
                </template>
@@ -85,6 +96,7 @@
 </template>
 
 <script>
+import { date, openURL } from 'quasar';
 import TimeAgo from 'javascript-time-ago';
 import { canonical } from 'javascript-time-ago/gradation';
 import en from 'javascript-time-ago/locale/en';
@@ -219,6 +231,9 @@ export default {
     marketTimeAgo() {
       return this.ago.format(this.item.marketTime, this.agoStyle);
     },
+    chartEnabled() {
+      return date.subtractFromDate(this.item.marketTime, { minutes: 20 }) < this.now;
+    },
   },
   watch: {
     tradedVolume() {
@@ -287,6 +302,14 @@ export default {
       } else {
         return null;
       }
+    },
+    openCharts() {
+      const from = date.subtractFromDate(this.item.marketTime, { minutes: 20 });
+      const url = process.env.LIVESTREAM_CHARTS_URL
+        .replace('$MARKET_ID', this.item.id)
+        .replace('$FROM', date.formatDate(from, 'x'))
+        .replace('$TO', 'now');
+      openURL(url);
     },
   },
 };

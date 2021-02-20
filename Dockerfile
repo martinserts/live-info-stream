@@ -17,6 +17,7 @@ RUN apk add --no-cache --virtual .gyp \
         g++ && \
     npm install && \
     npm install -g @quasar/cli && \
+    LIVESTREAM_CHARTS_URL='https://grafana.fplab.info/d/WiWvxiyMk/horse-race?orgId=2&from=$FROM&to=$TO&var-market_id=$MARKET_ID&var-runner_name=All&refresh=10s' \
     LIVESTREAM_API_ROOT=https://horse-racing.fplab.info/api/ \
     LIVESTREAM_WS_ROOT=wss://horse-racing.fplab.info/api/ws quasar build
 
